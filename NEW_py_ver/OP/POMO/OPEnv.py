@@ -13,7 +13,7 @@ class Reset_state :
     # shape: (batch, problem)
     
 @dataclass
-class Step_State : 
+class Step_state : 
     BATCH_IDX: torch.Tensor = None
     POMO_IDX: torch.Tensor = None
     # shape: (batch, pomo)
@@ -22,13 +22,13 @@ class Step_State :
     
     selected_count: int = None
     remaining_len = torch.Tensor = None
-    ninf_mask: torch.Tenso r = None
+    ninf_mask: torch.Tensor  = None
     # shape: (batch, pomo, node)
     
     finished: torch.Tensor = None
     
-class OPEnv : 
-    def __init__(self, **env_param) : 
+class OPEnv: 
+    def __init__(self, **env_params) : 
         
         # Const @INIT
         ####################################       
@@ -70,14 +70,16 @@ class OPEnv :
         
         # states to return
         ################.####################
-        self.reset_state = Reset_State()
-        self.step_state = Step_State()
+        self.reset_state = Reset_state()
+        self.step_state = Step_state()
         
     def load_problems(self, batch_size, aug_factor=1) : 
         self.batch_size = batch_size
         
         depot_xy, node_xy, node_prize = get_random_problems(batch_size, self.problem_size)
-        
+        #@todo 
+        self.depot_xy = depot_xy
+        self.node_xy = node_xy
         if aug_factor > 1:
             if aug_factor == 8:
                 self.batch_size = self.batch_size * 8
@@ -154,27 +156,24 @@ class OPEnv :
         # Dynamic-2
         ####################################
         self.at_the_depot = (selected == 0)
-        # not fully undrestood
-        prize_list = self.depot_node_prize[:, None, :].expand(self.batch_size, self.pomo_size, -1)
+        #fully undrestood
+        self.prize_list = self.depot_node_prize[:, None, :].expand(self.batch_size, self.pomo_size, -1)
         # shape: (batch, pomo, problem+1)
-        gathering_index = selected[:, :, None]
+        self.gathering_index = selected[:, :, None]
         # shape: (batch, pomo, 1)
-        selected_prize = prize_list.gather(dim=2, index=gathering_index).squeeze(dim=2)
-        # shape: (batch, pomo)
-        
-        # self.remaining_len -= selected_length ( need_change)
-        self.remaining_len[self.at_the_depot] = 1 # refill loaded at the depot ( need_change)
+        self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
 
-        self.visited_ninf_flag[self.BATCH_IDX, self.POMO_IDX, selected] = float('-inf')
-        # shape: (batch, pomo, problem+1)
-        self.visited_ninf_flag[:, :, 0][~self.at_the_depot] = 0  # depot is considered unvisited, unless you are AT the depot 
         
-        self.ninf_mask = self.visited_ninf_flag.clone()
-        round_error_epsilon = 0.00001
-        len_too_large = (self.remaining_len[:, :, None] + round_error_epsilon) < demand_list
-        # shape: (batch, pomo, problem+1)
-        self.ninf_mask[demand_too_large] = float('-inf')
-        # shape: (batch, pomo, problem+1)
+    def calculate_len_to_depot(self) :
+        self.depot_xy_expanded = self.depot_xy.expand_as(self.node_xy)
+        
+        # Calculate squared differences and sum along the last dimension
+        self.squared_diff = (self.depot_xy_expanded - self.node_xy) ** 2
+        self.distance_sums = torch.sum(self.squared_diff, dim=2)
+
+        # Square root to get the Euclidean distances
+        self.len_to_depot = torch.sqrt(self.distance_sums)
+        
     
-    
+
     
