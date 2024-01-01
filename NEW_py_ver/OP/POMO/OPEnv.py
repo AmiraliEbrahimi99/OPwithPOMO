@@ -148,7 +148,13 @@ class OPEnv:
         # Dynamic-1
         ####################################
         self.selected_count += 1
-        self.current_node = selected
+        
+        if self.current_node is not None : 
+            self.last_node = self.current_node.clone()
+        else : 
+            self.last_node = torch.zeros((self.batch_size, self.pomo_size), dtype=torch.int64)
+            
+        self.current_node = selected.clone()
         # shape: (batch, pomo)
         self.selected_node_list = torch.cat((self.selected_node_list, self.current_node[:, :, None]), dim=2)
         # shape: (batch, pomo, 0~)
@@ -162,9 +168,37 @@ class OPEnv:
         self.gathering_index = selected[:, :, None]
         # shape: (batch, pomo, 1)
         self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
+        
+        #todo 
+        selected_len = self.calculate_two_distance()
+        print(f'selected_len : {selected_len}')
+        print(f'remaining_len : {self.remaining_len} ')
+        self.remaining_len -= selected_len
+        print(f'remaining_len : {self.remaining_len} ')
+        
+        self.visited_ninf_flag[self.BATCH_IDX, self.POMO_IDX, selected] = float('-inf')
+        # shape: (batch, pomo, problem+1)
+        self.visited_ninf_flag[:, :, 0][~self.at_the_depot] = 0  # depot is considered unvisited, unless you are AT the depot
 
+        self.ninf_mask = self.visited_ninf_flag.clone()
+        
+        round_error_epsilon = 0.00001
+        # demand_too_large = self.load[:, :, None] + round_error_epsilon < demand_list
+        # # shape: (batch, pomo, problem+1)
+        # self.ninf_mask[demand_too_large] = float('-inf')
+        # # shape: (batch, pomo, problem+1)
+        self.len_to_depot = self.calculate_len_to_depot()
+        # self.possible_dists = self.len_to_depot + self.dist_to_selected  
+        self.possible_dists = self.len_to_depot
+        self.len_too_large = self.remaining_len + round_error_epsilon < self.possible_dists 
+        
+        self.newly_finished = (self.visited_ninf_flag == float('-inf')).all(dim=2)
+        # shape: (batch, pomo)
+        self.finished = self.finished + self.newly_finished
+        # shape: (batch, pomo)
         
     def calculate_len_to_depot(self) :
+        
         self.depot_xy_expanded = self.depot_xy.expand_as(self.node_xy)
         
         # Calculate squared differences and sum along the last dimension
@@ -172,8 +206,43 @@ class OPEnv:
         self.distance_sums = torch.sum(self.squared_diff, dim=2)
 
         # Square root to get the Euclidean distances
-        self.len_to_depot = torch.sqrt(self.distance_sums)
+        len_to_depot = torch.sqrt(self.distance_sums)
+        return len_to_depot
         
-    
+    def calculate_future_len(self) : 
+        
+        self.current_xy_expanded = self.node_xy_current.expand_as(self.node_xy)
+        
+        # Calculate squared differences and sum along the last dimension
+        squared_diff = (self.current_xy_expanded - self.node_xy) ** 2
+        distance_sums = torch.sum(squared_diff, dim=2)
 
+        # Square root to get the Euclidean distances
+        future_len = torch.sqrt(distance_sums)
+        return future_len 
     
+    def calculate_two_distance(self) : 
+        
+        current_node_zero_indexed = self.current_node
+        last_node_zero_indexed = self.last_node 
+        
+        #todo 
+        # Expanding the dimensions of current_node to match the dimensions of node_xy for gathering
+        current_node_expanded = current_node_zero_indexed.unsqueeze(2).expand(-1, -1, 2)
+
+        # Using gather to fill the node_xy_current tensor
+        self.node_xy_current = torch.gather(self.depot_node_xy, 1, current_node_expanded)
+
+        # Expanding the dimensions of last_node to match the dimensions of node_xy for gathering
+        last_node_expanded = last_node_zero_indexed.unsqueeze(2).expand(-1, -1, 2)
+
+        # Using gather to fill the node_xy_last tensor
+        self.node_xy_last = torch.gather(self.depot_node_xy, 1, last_node_expanded)
+        
+        squared_diff = (self.node_xy_last - self.node_xy_current) ** 2
+        distance_sums = torch.sum(squared_diff, dim=2)
+
+        # Square root to get the Euclidean distances
+        selected_len = torch.sqrt(distance_sums)
+        
+        return selected_len
