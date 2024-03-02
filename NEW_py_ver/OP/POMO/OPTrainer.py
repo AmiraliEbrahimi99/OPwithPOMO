@@ -2,8 +2,8 @@
 import torch
 from logging import getLogger
 
-from OPEnv import CVRPEnv as Env
-from OPModel import CVRPModel as Model
+from OPEnv import OPEnv as Env
+from OPModel import OPModel as Model
 
 from torch.optim import Adam as Optimizer
 from torch.optim.lr_scheduler import MultiStepLR as Scheduler
@@ -11,7 +11,7 @@ from torch.optim.lr_scheduler import MultiStepLR as Scheduler
 from utils.utils import *
 
 
-class CVRPTrainer:
+class OPTrainer:
     def __init__(self,
                  env_params,
                  model_params,

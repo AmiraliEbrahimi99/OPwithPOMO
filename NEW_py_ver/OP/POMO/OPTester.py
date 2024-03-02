@@ -10,7 +10,7 @@ from OPModel import CVRPModel as Model
 from utils.utils import *
 
 
-class CVRPTester:
+class OPTester:
     def __init__(self,
                  env_params,
                  model_params,
