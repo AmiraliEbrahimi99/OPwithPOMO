@@ -77,7 +77,6 @@ class OPEnv:
         self.batch_size = batch_size
         
         depot_xy, node_xy, node_prize = get_random_problems(batch_size, self.problem_size)
-        #@todo 
         self.depot_xy = depot_xy
         self.node_xy = node_xy
         if aug_factor > 1:
@@ -251,7 +250,7 @@ class OPEnv:
         # Calculate squared differences and sum along the last dimension
         squared_diff = (self.current_xy_expanded - self.node_xy_expanded) ** 2
         #shape: (batch, pomo, problem, 2)
-        distance_sums = torch.sum(squared_diff, dim=3)                                  ##@todo
+        distance_sums = torch.sum(squared_diff, dim=3)                                  
         #shape: (batch, problem)
 
         # Square root to get the Euclidean distances
