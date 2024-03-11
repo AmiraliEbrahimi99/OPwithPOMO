@@ -45,7 +45,7 @@ class OPModel(nn.Module):
         else:
             encoded_last_node = _get_encoding(self.encoded_nodes, state.current_node)
             # shape: (batch, pomo, embedding)
-            probs = self.decoder(encoded_last_node, state.load, ninf_mask=state.ninf_mask)          #@todo mask
+            probs = self.decoder(encoded_last_node, state.remaining_len, ninf_mask=state.ninf_mask)          #@todo mask
             # shape: (batch, pomo, problem+1)
 
             if self.training or self.model_params['eval_type'] == 'softmax':
