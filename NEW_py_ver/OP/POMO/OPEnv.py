@@ -21,7 +21,7 @@ class Step_state :
     current_node: torch.Tensor = None
     
     selected_count: int = None
-    remaining_len = torch.Tensor = None
+    remaining_len : torch.Tensor = None
     ninf_mask: torch.Tensor  = None
     # shape: (batch, pomo, node)
     
