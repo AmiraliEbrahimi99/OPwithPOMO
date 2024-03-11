@@ -173,12 +173,13 @@ class OPEnv:
         # shape: (batch, pomo)
         self.collected_prize += self.selected_prize
         
-        #@todo 
+
         selected_len = self.calculate_two_distance()
-        print(f'selected_len : {selected_len}')
-        print(f'remaining_len before step : {self.remaining_len} ')
+        # print(f'selected_len : {selected_len}')
+        # print(f'remaining_len before step : {self.remaining_len} ')
         self.remaining_len -= selected_len
-        print(f'remaining_len after step: {self.remaining_len} ')
+        #@todo make remaining_len positive
+        # print(f'remaining_len after step: {self.remaining_len} ')
         
         self.visited_ninf_flag[self.BATCH_IDX, self.POMO_IDX, selected] = float('-inf')
         # shape: (batch, pomo, problem+1)
@@ -188,8 +189,10 @@ class OPEnv:
         round_error_epsilon = 0.00001
         
         self.len_to_depot = self.calculate_len_to_depot()
+        # print(f'len_to_depot : {self.len_to_depot}')
         # shape: (batch, pomo)
         self.future_len = self.calculate_future_len()
+        # print(f'future_len : {self.future_len}')        
         # shape: (batch, pomo, problem)
         self.len_to_depot_expanded = self.len_to_depot.unsqueeze(dim=1).expand(-1,self.problem_size,-1)
         # shape: (batch, pomo, problem)
@@ -208,6 +211,9 @@ class OPEnv:
         # shape: (batch, pomo)
         self.finished = self.finished + self.newly_finished
         # shape: (batch, pomo)
+        
+        # do not mask depot for finished episode.
+        self.ninf_mask[:, :, 0][self.finished] = 0
         
         self.step_state.selected_count = self.selected_count
         self.step_state.remaining_len = self.remaining_len

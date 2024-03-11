@@ -68,7 +68,7 @@ trainer_params = {
         'img_save_interval': 1,
         'log_image_params_1': {
             'json_foldername': 'log_image_style',
-            'filename': 'style_cvrp_100.json'
+            'filename': 'style_OP_5.json'
         },
         'log_image_params_2': {
             'json_foldername': 'log_image_style',
@@ -113,9 +113,9 @@ def main():
 
 def _set_debug_mode():
     global trainer_params
-    trainer_params['epochs'] = 2
+    trainer_params['epochs'] = 100
     trainer_params['train_episodes'] = 4
-    trainer_params['train_batch_size'] = 2
+    trainer_params['train_batch_size'] = 64
 
 
 def _print_config():

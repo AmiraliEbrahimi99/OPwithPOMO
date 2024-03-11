@@ -51,6 +51,7 @@ class OPModel(nn.Module):
             if self.training or self.model_params['eval_type'] == 'softmax':
                 while True:  # to fix pytorch.multinomial bug on selecting 0 probability elements
                     with torch.no_grad():
+                        # print(f'probs : {probs}')
                         selected = probs.reshape(batch_size * pomo_size, -1).multinomial(1) \
                             .squeeze(dim=1).reshape(batch_size, pomo_size)
                     # shape: (batch, pomo)
