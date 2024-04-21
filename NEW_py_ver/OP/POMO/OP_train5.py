@@ -1,8 +1,8 @@
 ##########################################################################################
 # Machine Environment Config
 
-DEBUG_MODE = True
-USE_CUDA = False
+DEBUG_MODE = False
+USE_CUDA = not DEBUG_MODE
 CUDA_DEVICE_NUM = 0
 
 
@@ -59,13 +59,13 @@ optimizer_params = {
 trainer_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
-    'epochs': 2 ,
-    'train_episodes': 10 * 100,
-    'train_batch_size': 5,
+    'epochs': 50 ,
+    'train_episodes': 10 * 1000,
+    'train_batch_size': 64,
     'prev_model_path': None,
     'logging': {
-        'model_save_interval': 1,
-        'img_save_interval': 1,
+        'model_save_interval': 10,
+        'img_save_interval': 10,
         'log_image_params_1': {
             'json_foldername': 'log_image_style',
             'filename': 'style_OP_5.json'
@@ -113,8 +113,8 @@ def main():
 
 def _set_debug_mode():
     global trainer_params
-    trainer_params['epochs'] = 100
-    trainer_params['train_episodes'] = 4
+    trainer_params['epochs'] = 1
+    trainer_params['train_episodes'] = 10
     trainer_params['train_batch_size'] = 64
 
 
