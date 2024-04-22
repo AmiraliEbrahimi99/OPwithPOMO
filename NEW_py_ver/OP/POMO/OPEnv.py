@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import torch
+import numpy as np
 from OPProblemDef import get_random_problems, augment_xy_data_by_8_fold
 
 
@@ -19,7 +20,6 @@ class Step_state :
     # shape: (batch, pomo)
     
     current_node: torch.Tensor = None
-    
     selected_count: int = None
     remaining_len : torch.Tensor = None
     ninf_mask: torch.Tensor  = None
@@ -115,6 +115,8 @@ class OPEnv:
 
         self.at_the_depot = torch.ones(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
         # shape: (batch, pomo)
+        self.ninf_mask_first_step = torch.ones(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
+        # shape: (batch, pomo)
         self.remaining_len = 2*torch.ones(size=(self.batch_size, self.pomo_size))               
         # shape: (batch, pomo)
         self.visited_ninf_flag = torch.zeros(size=(self.batch_size, self.pomo_size, self.problem_size+1))
@@ -165,6 +167,23 @@ class OPEnv:
         ####################################
         self.at_the_depot = (selected == 0)
         
+        selected_len = self.calculate_two_distance()
+
+        self.first_step_len_too_large = (self.remaining_len/2 < selected_len)               #infeasible first step condition
+        self.ninf_mask_first_step[self.first_step_len_too_large] = False
+        # shape: (batch, pomo)
+
+        if self.selected_count == 2 :                                                       #first step    
+            # print(f'first step mask {self.ninf_mask_first_step}')                            
+            selected = torch.where(self.ninf_mask_first_step, selected, torch.tensor(0))        #using 'where' method to change only one element of tensor
+            selected_len = torch.where(self.ninf_mask_first_step, selected_len, torch.tensor(0.0))
+            self.visited_ninf_flag[~self.ninf_mask_first_step.unsqueeze(2).expand_as(self.visited_ninf_flag)] = float('-inf')
+            self.finished = torch.where(self.ninf_mask_first_step, self.finished, torch.tensor(bool(True)))
+
+        if self.selected_count == 3 :                                                        #second step (to correct wrong remaining length bug)
+            selected_len = torch.where(self.ninf_mask_first_step, selected_len, torch.tensor(0.0))
+        # print(f'end {self.visited_ninf_flag}')
+
         self.prize_list = self.depot_node_prize[:, None, :].expand(self.batch_size, self.pomo_size, -1)
         # shape: (batch, pomo, problem+1)
         self.gathering_index = selected[:, :, None]
@@ -173,14 +192,12 @@ class OPEnv:
         # shape: (batch, pomo)
         self.collected_prize += self.selected_prize
         
-
-        selected_len = self.calculate_two_distance()
-        # print(f'selected_len : {selected_len}')
-        # print(f'remaining_len before step : {self.remaining_len} ')
+        # print(f'selected_nodes : {selected} \n selected_len : {selected_len} \n')
+        # print(f'remaining_len before step : {self.remaining_len}\n')
         self.remaining_len -= selected_len
-        #@todo make remaining_len positive
-        # print(f'remaining_len after step: {self.remaining_len} ')
-        
+        # print(f'remaining_len after step: {self.remaining_len}\n')
+        # print(f'prize {self.collected_prize}')
+
         self.visited_ninf_flag[self.BATCH_IDX, self.POMO_IDX, selected] = float('-inf')
         # shape: (batch, pomo, problem+1)
         self.visited_ninf_flag[:, :, 0][~self.at_the_depot] = 0  # depot is considered unvisited, unless you are AT the depot
@@ -189,10 +206,8 @@ class OPEnv:
         round_error_epsilon = 0.00001
         
         self.len_to_depot = self.calculate_len_to_depot()
-        # print(f'len_to_depot : {self.len_to_depot}')
         # shape: (batch, pomo)
-        self.future_len = self.calculate_future_len()
-        # print(f'future_len : {self.future_len}')        
+        self.future_len = self.calculate_future_len()       
         # shape: (batch, pomo, problem)
         self.len_to_depot_expanded = self.len_to_depot.unsqueeze(dim=1).expand(-1,self.problem_size,-1)
         # shape: (batch, pomo, problem)
@@ -207,6 +222,7 @@ class OPEnv:
         # shape: (batch, pomo, problem+1) 
         self.ninf_mask[self.len_too_large_expanded] = float('-inf')
         # shape: (batch, pomo, problem+1)
+
         self.newly_finished = (self.ninf_mask == float('-inf')).all(dim=2)
         # shape: (batch, pomo)
         self.finished = self.finished + self.newly_finished
