@@ -88,7 +88,7 @@ class OPEnv:
         self.saved_node_prize = loaded_dict['node_demand']
         self.saved_index = 0    
 
-    def load_problems(self, batch_size, aug_factor=8) : 
+    def load_problems(self, batch_size, aug_factor=1) : 
         self.batch_size = batch_size
         
         if not self.FLAG__use_saved_problems:
