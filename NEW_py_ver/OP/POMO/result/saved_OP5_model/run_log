@@ -1,0 +1,245 @@
+[2024-04-23 10:29:44] OP_train5.py(123) : DEBUG_MODE: False
+[2024-04-23 10:29:44] OP_train5.py(124) : USE_CUDA: True, CUDA_DEVICE_NUM: 0
+[2024-04-23 10:29:44] OP_train5.py(125) : env_params{'problem_size': 5, 'pomo_size': 5}
+[2024-04-23 10:29:44] OP_train5.py(125) : model_params{'embedding_dim': 128, 'sqrt_embedding_dim': 11.313708498984761, 'encoder_layer_num': 6, 'qkv_dim': 16, 'head_num': 8, 'logit_clipping': 10, 'ff_hidden_dim': 512, 'eval_type': 'argmax'}
+[2024-04-23 10:29:44] OP_train5.py(125) : optimizer_params{'optimizer': {'lr': 0.0001, 'weight_decay': 1e-06}, 'scheduler': {'milestones': [8001, 8051], 'gamma': 0.1}}
+[2024-04-23 10:29:44] OP_train5.py(125) : trainer_params{'use_cuda': True, 'cuda_device_num': 0, 'epochs': 50, 'train_episodes': 10000, 'train_batch_size': 64, 'prev_model_path': None, 'logging': {'model_save_interval': 2, 'img_save_interval': 2, 'log_image_params_1': {'json_foldername': 'log_image_style', 'filename': 'style_OP_5.json'}, 'log_image_params_2': {'json_foldername': 'log_image_style', 'filename': 'style_loss_1.json'}}, 'model_load': {'enable': False}}
+[2024-04-23 10:29:44] OP_train5.py(125) : logger_params{'log_file': {'desc': 'train_op_n5_with_instNorm', 'filename': 'run_log', 'filepath': './result/20240423_155943_train_op_n5_with_instNorm'}}
+[2024-04-23 10:29:46] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:29:48] OPTrainer.py(149) : Epoch   1: Train  64/10000(0.6%)  Score: 18.3906,  Loss: 0.9850
+[2024-04-23 10:29:48] OPTrainer.py(149) : Epoch   1: Train 128/10000(1.3%)  Score: 19.2891,  Loss: 0.7060
+[2024-04-23 10:29:48] OPTrainer.py(149) : Epoch   1: Train 192/10000(1.9%)  Score: 19.7396,  Loss: 0.3456
+[2024-04-23 10:29:48] OPTrainer.py(149) : Epoch   1: Train 256/10000(2.6%)  Score: 20.1367,  Loss: 0.0755
+[2024-04-23 10:29:48] OPTrainer.py(149) : Epoch   1: Train 320/10000(3.2%)  Score: 20.1250,  Loss: 0.0228
+[2024-04-23 10:29:48] OPTrainer.py(149) : Epoch   1: Train 384/10000(3.8%)  Score: 20.0286,  Loss: -0.0039
+[2024-04-23 10:29:48] OPTrainer.py(149) : Epoch   1: Train 448/10000(4.5%)  Score: 20.1094,  Loss: 0.0075
+[2024-04-23 10:29:49] OPTrainer.py(149) : Epoch   1: Train 512/10000(5.1%)  Score: 20.2598,  Loss: 0.0195
+[2024-04-23 10:29:49] OPTrainer.py(149) : Epoch   1: Train 576/10000(5.8%)  Score: 20.3368,  Loss: 0.0093
+[2024-04-23 10:29:49] OPTrainer.py(149) : Epoch   1: Train 640/10000(6.4%)  Score: 20.3281,  Loss: 0.0297
+[2024-04-23 10:30:02] OPTrainer.py(154) : Epoch   1: Train (100%)  Score: 20.5917,  Loss: 0.0123
+[2024-04-23 10:30:02] OPTrainer.py(83) : Epoch   1/ 50: Time Est.: Elapsed[0.25m], Remain[12.42m]
+[2024-04-23 10:30:02] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:30:16] OPTrainer.py(154) : Epoch   2: Train (100%)  Score: 20.5645,  Loss: -0.0107
+[2024-04-23 10:30:16] OPTrainer.py(83) : Epoch   2/ 50: Time Est.: Elapsed[0.48m], Remain[11.63m]
+[2024-04-23 10:30:16] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:30:16] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:30:16] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:30:31] OPTrainer.py(154) : Epoch   3: Train (100%)  Score: 20.5793,  Loss: 0.0162
+[2024-04-23 10:30:31] OPTrainer.py(83) : Epoch   3/ 50: Time Est.: Elapsed[0.74m], Remain[11.54m]
+[2024-04-23 10:30:31] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:30:31] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:30:46] OPTrainer.py(154) : Epoch   4: Train (100%)  Score: 20.5176,  Loss: -0.0161
+[2024-04-23 10:30:46] OPTrainer.py(83) : Epoch   4/ 50: Time Est.: Elapsed[0.98m], Remain[11.32m]
+[2024-04-23 10:30:46] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:30:46] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:30:47] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:31:04] OPTrainer.py(154) : Epoch   5: Train (100%)  Score: 20.5279,  Loss: 0.0010
+[2024-04-23 10:31:04] OPTrainer.py(83) : Epoch   5/ 50: Time Est.: Elapsed[1.29m], Remain[11.60m]
+[2024-04-23 10:31:04] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:31:04] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:31:20] OPTrainer.py(154) : Epoch   6: Train (100%)  Score: 20.6247,  Loss: 0.0013
+[2024-04-23 10:31:20] OPTrainer.py(83) : Epoch   6/ 50: Time Est.: Elapsed[1.56m], Remain[11.45m]
+[2024-04-23 10:31:20] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:31:21] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:31:21] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:31:37] OPTrainer.py(154) : Epoch   7: Train (100%)  Score: 20.6662,  Loss: -0.0084
+[2024-04-23 10:31:37] OPTrainer.py(83) : Epoch   7/ 50: Time Est.: Elapsed[1.84m], Remain[11.31m]
+[2024-04-23 10:31:37] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:31:37] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:31:52] OPTrainer.py(154) : Epoch   8: Train (100%)  Score: 20.6381,  Loss: 0.0025
+[2024-04-23 10:31:52] OPTrainer.py(83) : Epoch   8/ 50: Time Est.: Elapsed[2.10m], Remain[11.01m]
+[2024-04-23 10:31:52] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:31:53] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:31:53] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:32:08] OPTrainer.py(154) : Epoch   9: Train (100%)  Score: 20.6188,  Loss: 0.0191
+[2024-04-23 10:32:08] OPTrainer.py(83) : Epoch   9/ 50: Time Est.: Elapsed[2.36m], Remain[10.76m]
+[2024-04-23 10:32:08] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:32:09] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:32:23] OPTrainer.py(154) : Epoch  10: Train (100%)  Score: 20.5745,  Loss: -0.0041
+[2024-04-23 10:32:23] OPTrainer.py(83) : Epoch  10/ 50: Time Est.: Elapsed[2.61m], Remain[10.46m]
+[2024-04-23 10:32:23] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:32:24] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:32:24] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:32:41] OPTrainer.py(154) : Epoch  11: Train (100%)  Score: 20.6542,  Loss: 0.0262
+[2024-04-23 10:32:41] OPTrainer.py(83) : Epoch  11/ 50: Time Est.: Elapsed[2.90m], Remain[10.29m]
+[2024-04-23 10:32:41] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:32:41] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:32:57] OPTrainer.py(154) : Epoch  12: Train (100%)  Score: 20.6303,  Loss: 0.0168
+[2024-04-23 10:32:57] OPTrainer.py(83) : Epoch  12/ 50: Time Est.: Elapsed[3.17m], Remain[10.03m]
+[2024-04-23 10:32:57] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:32:57] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:32:57] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:33:13] OPTrainer.py(154) : Epoch  13: Train (100%)  Score: 20.6875,  Loss: 0.0006
+[2024-04-23 10:33:13] OPTrainer.py(83) : Epoch  13/ 50: Time Est.: Elapsed[3.44m], Remain[9.79m]
+[2024-04-23 10:33:13] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:33:13] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:33:29] OPTrainer.py(154) : Epoch  14: Train (100%)  Score: 20.6943,  Loss: 0.0079
+[2024-04-23 10:33:29] OPTrainer.py(83) : Epoch  14/ 50: Time Est.: Elapsed[3.71m], Remain[9.53m]
+[2024-04-23 10:33:29] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:33:29] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:33:30] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:33:46] OPTrainer.py(154) : Epoch  15: Train (100%)  Score: 20.6879,  Loss: 0.0074
+[2024-04-23 10:33:46] OPTrainer.py(83) : Epoch  15/ 50: Time Est.: Elapsed[4.00m], Remain[9.33m]
+[2024-04-23 10:33:46] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:33:47] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:34:01] OPTrainer.py(154) : Epoch  16: Train (100%)  Score: 20.6497,  Loss: 0.0002
+[2024-04-23 10:34:01] OPTrainer.py(83) : Epoch  16/ 50: Time Est.: Elapsed[4.24m], Remain[9.00m]
+[2024-04-23 10:34:01] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:34:01] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:34:02] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:34:16] OPTrainer.py(154) : Epoch  17: Train (100%)  Score: 20.7237,  Loss: 0.0277
+[2024-04-23 10:34:16] OPTrainer.py(83) : Epoch  17/ 50: Time Est.: Elapsed[4.49m], Remain[8.72m]
+[2024-04-23 10:34:16] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:34:16] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:34:31] OPTrainer.py(154) : Epoch  18: Train (100%)  Score: 20.6596,  Loss: 0.0100
+[2024-04-23 10:34:31] OPTrainer.py(83) : Epoch  18/ 50: Time Est.: Elapsed[4.74m], Remain[8.43m]
+[2024-04-23 10:34:31] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:34:31] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:34:32] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:34:47] OPTrainer.py(154) : Epoch  19: Train (100%)  Score: 20.8407,  Loss: 0.0051
+[2024-04-23 10:34:47] OPTrainer.py(83) : Epoch  19/ 50: Time Est.: Elapsed[5.01m], Remain[8.17m]
+[2024-04-23 10:34:47] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:34:47] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:35:03] OPTrainer.py(154) : Epoch  20: Train (100%)  Score: 20.8222,  Loss: 0.0092
+[2024-04-23 10:35:03] OPTrainer.py(83) : Epoch  20/ 50: Time Est.: Elapsed[5.27m], Remain[7.90m]
+[2024-04-23 10:35:03] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:35:03] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:35:03] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:35:18] OPTrainer.py(154) : Epoch  21: Train (100%)  Score: 20.8036,  Loss: 0.0090
+[2024-04-23 10:35:18] OPTrainer.py(83) : Epoch  21/ 50: Time Est.: Elapsed[5.52m], Remain[7.62m]
+[2024-04-23 10:35:18] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:35:18] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:35:32] OPTrainer.py(154) : Epoch  22: Train (100%)  Score: 20.7993,  Loss: 0.0162
+[2024-04-23 10:35:32] OPTrainer.py(83) : Epoch  22/ 50: Time Est.: Elapsed[5.76m], Remain[7.33m]
+[2024-04-23 10:35:32] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:35:33] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:35:33] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:35:47] OPTrainer.py(154) : Epoch  23: Train (100%)  Score: 20.8818,  Loss: 0.0088
+[2024-04-23 10:35:47] OPTrainer.py(83) : Epoch  23/ 50: Time Est.: Elapsed[6.01m], Remain[7.06m]
+[2024-04-23 10:35:47] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:35:48] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:36:02] OPTrainer.py(154) : Epoch  24: Train (100%)  Score: 20.7538,  Loss: 0.0012
+[2024-04-23 10:36:02] OPTrainer.py(83) : Epoch  24/ 50: Time Est.: Elapsed[6.26m], Remain[6.79m]
+[2024-04-23 10:36:02] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:36:03] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:36:03] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:36:19] OPTrainer.py(154) : Epoch  25: Train (100%)  Score: 20.7486,  Loss: 0.0070
+[2024-04-23 10:36:19] OPTrainer.py(83) : Epoch  25/ 50: Time Est.: Elapsed[6.54m], Remain[6.54m]
+[2024-04-23 10:36:19] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:36:19] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:36:34] OPTrainer.py(154) : Epoch  26: Train (100%)  Score: 20.8052,  Loss: -0.0027
+[2024-04-23 10:36:34] OPTrainer.py(83) : Epoch  26/ 50: Time Est.: Elapsed[6.79m], Remain[6.27m]
+[2024-04-23 10:36:34] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:36:34] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:36:35] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:36:49] OPTrainer.py(154) : Epoch  27: Train (100%)  Score: 20.7990,  Loss: -0.0036
+[2024-04-23 10:36:49] OPTrainer.py(83) : Epoch  27/ 50: Time Est.: Elapsed[7.05m], Remain[6.00m]
+[2024-04-23 10:36:49] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:36:50] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:37:05] OPTrainer.py(154) : Epoch  28: Train (100%)  Score: 20.8282,  Loss: 0.0281
+[2024-04-23 10:37:05] OPTrainer.py(83) : Epoch  28/ 50: Time Est.: Elapsed[7.30m], Remain[5.74m]
+[2024-04-23 10:37:05] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:37:05] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:37:06] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:37:20] OPTrainer.py(154) : Epoch  29: Train (100%)  Score: 20.8815,  Loss: 0.0135
+[2024-04-23 10:37:20] OPTrainer.py(83) : Epoch  29/ 50: Time Est.: Elapsed[7.56m], Remain[5.48m]
+[2024-04-23 10:37:20] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:37:21] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:37:35] OPTrainer.py(154) : Epoch  30: Train (100%)  Score: 20.7935,  Loss: 0.0135
+[2024-04-23 10:37:35] OPTrainer.py(83) : Epoch  30/ 50: Time Est.: Elapsed[7.80m], Remain[5.20m]
+[2024-04-23 10:37:35] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:37:35] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:37:36] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:37:51] OPTrainer.py(154) : Epoch  31: Train (100%)  Score: 20.8866,  Loss: 0.0022
+[2024-04-23 10:37:51] OPTrainer.py(83) : Epoch  31/ 50: Time Est.: Elapsed[8.07m], Remain[4.94m]
+[2024-04-23 10:37:51] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:37:51] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:38:05] OPTrainer.py(154) : Epoch  32: Train (100%)  Score: 20.8860,  Loss: 0.0068
+[2024-04-23 10:38:05] OPTrainer.py(83) : Epoch  32/ 50: Time Est.: Elapsed[8.31m], Remain[4.67m]
+[2024-04-23 10:38:05] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:38:05] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:38:06] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:38:20] OPTrainer.py(154) : Epoch  33: Train (100%)  Score: 20.8790,  Loss: 0.0033
+[2024-04-23 10:38:20] OPTrainer.py(83) : Epoch  33/ 50: Time Est.: Elapsed[8.56m], Remain[4.41m]
+[2024-04-23 10:38:20] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:38:20] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:38:34] OPTrainer.py(154) : Epoch  34: Train (100%)  Score: 20.8262,  Loss: -0.0068
+[2024-04-23 10:38:34] OPTrainer.py(83) : Epoch  34/ 50: Time Est.: Elapsed[8.80m], Remain[4.14m]
+[2024-04-23 10:38:34] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:38:35] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:38:35] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:38:49] OPTrainer.py(154) : Epoch  35: Train (100%)  Score: 20.8797,  Loss: 0.0028
+[2024-04-23 10:38:49] OPTrainer.py(83) : Epoch  35/ 50: Time Est.: Elapsed[9.04m], Remain[3.88m]
+[2024-04-23 10:38:49] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:38:49] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:39:06] OPTrainer.py(154) : Epoch  36: Train (100%)  Score: 20.8533,  Loss: 0.0150
+[2024-04-23 10:39:06] OPTrainer.py(83) : Epoch  36/ 50: Time Est.: Elapsed[9.32m], Remain[3.62m]
+[2024-04-23 10:39:06] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:39:06] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:39:07] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:39:21] OPTrainer.py(154) : Epoch  37: Train (100%)  Score: 20.8210,  Loss: -0.0080
+[2024-04-23 10:39:21] OPTrainer.py(83) : Epoch  37/ 50: Time Est.: Elapsed[9.57m], Remain[3.36m]
+[2024-04-23 10:39:21] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:39:21] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:39:36] OPTrainer.py(154) : Epoch  38: Train (100%)  Score: 20.9225,  Loss: 0.0015
+[2024-04-23 10:39:36] OPTrainer.py(83) : Epoch  38/ 50: Time Est.: Elapsed[9.83m], Remain[3.10m]
+[2024-04-23 10:39:36] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:39:37] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:39:37] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:39:54] OPTrainer.py(154) : Epoch  39: Train (100%)  Score: 20.9455,  Loss: 0.0105
+[2024-04-23 10:39:54] OPTrainer.py(83) : Epoch  39/ 50: Time Est.: Elapsed[10.12m], Remain[2.85m]
+[2024-04-23 10:39:54] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:39:54] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:40:09] OPTrainer.py(154) : Epoch  40: Train (100%)  Score: 20.8786,  Loss: 0.0024
+[2024-04-23 10:40:09] OPTrainer.py(83) : Epoch  40/ 50: Time Est.: Elapsed[10.37m], Remain[2.59m]
+[2024-04-23 10:40:09] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:40:09] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:40:10] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:40:25] OPTrainer.py(154) : Epoch  41: Train (100%)  Score: 21.0325,  Loss: -0.0034
+[2024-04-23 10:40:25] OPTrainer.py(83) : Epoch  41/ 50: Time Est.: Elapsed[10.64m], Remain[2.34m]
+[2024-04-23 10:40:25] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:40:25] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:40:40] OPTrainer.py(154) : Epoch  42: Train (100%)  Score: 20.9751,  Loss: 0.0068
+[2024-04-23 10:40:40] OPTrainer.py(83) : Epoch  42/ 50: Time Est.: Elapsed[10.90m], Remain[2.08m]
+[2024-04-23 10:40:40] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:40:41] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:40:41] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:40:56] OPTrainer.py(154) : Epoch  43: Train (100%)  Score: 20.9884,  Loss: 0.0197
+[2024-04-23 10:40:56] OPTrainer.py(83) : Epoch  43/ 50: Time Est.: Elapsed[11.16m], Remain[1.82m]
+[2024-04-23 10:40:56] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:40:57] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:41:12] OPTrainer.py(154) : Epoch  44: Train (100%)  Score: 20.9572,  Loss: -0.0050
+[2024-04-23 10:41:12] OPTrainer.py(83) : Epoch  44/ 50: Time Est.: Elapsed[11.42m], Remain[1.56m]
+[2024-04-23 10:41:12] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:41:12] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:41:13] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:41:28] OPTrainer.py(154) : Epoch  45: Train (100%)  Score: 20.9610,  Loss: 0.0173
+[2024-04-23 10:41:28] OPTrainer.py(83) : Epoch  45/ 50: Time Est.: Elapsed[11.68m], Remain[1.30m]
+[2024-04-23 10:41:28] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:41:28] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:41:43] OPTrainer.py(154) : Epoch  46: Train (100%)  Score: 20.9982,  Loss: 0.0202
+[2024-04-23 10:41:43] OPTrainer.py(83) : Epoch  46/ 50: Time Est.: Elapsed[11.95m], Remain[1.04m]
+[2024-04-23 10:41:43] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:41:44] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:41:44] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:41:59] OPTrainer.py(154) : Epoch  47: Train (100%)  Score: 20.9566,  Loss: 0.0027
+[2024-04-23 10:41:59] OPTrainer.py(83) : Epoch  47/ 50: Time Est.: Elapsed[12.20m], Remain[0.78m]
+[2024-04-23 10:41:59] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:41:59] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:42:14] OPTrainer.py(154) : Epoch  48: Train (100%)  Score: 21.0214,  Loss: -0.0032
+[2024-04-23 10:42:14] OPTrainer.py(83) : Epoch  48/ 50: Time Est.: Elapsed[12.46m], Remain[0.52m]
+[2024-04-23 10:42:14] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:42:14] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:42:15] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:42:30] OPTrainer.py(154) : Epoch  49: Train (100%)  Score: 20.9984,  Loss: 0.0084
+[2024-04-23 10:42:30] OPTrainer.py(83) : Epoch  49/ 50: Time Est.: Elapsed[12.72m], Remain[0.26m]
+[2024-04-23 10:42:30] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:42:30] OPTrainer.py(68) : =================================================================
+[2024-04-23 10:42:46] OPTrainer.py(154) : Epoch  50: Train (100%)  Score: 20.9332,  Loss: -0.0060
+[2024-04-23 10:42:46] OPTrainer.py(83) : Epoch  50/ 50: Time Est.: Elapsed[12.99m], Remain[0.00m]
+[2024-04-23 10:42:46] OPTrainer.py(91) : Saving log_image
+[2024-04-23 10:42:46] OPTrainer.py(100) : Saving trained_model
+[2024-04-23 10:42:46] OPTrainer.py(120) :  *** Training Done *** 
+[2024-04-23 10:42:46] OPTrainer.py(121) : Now, printing log array...
+[2024-04-23 10:42:46] utils.py(236) : train_loss_list = [0.012302829879894853, -0.01067607365194708, 0.01619887606516131, -0.016111749531887473, 0.0009530527923256158, 0.00125081190392375, -0.008365969492215663, 0.0024851125807035714, 0.01910442662090063, -0.004099348020553589, 0.026208285737130792, 0.016794205917418002, 0.0006415472134947776, 0.00792295909114182, 0.007378826102428139, 0.00021032270789146423, 0.027667873075790703, 0.009991533866524696, 0.00514101709201932, 0.009160638841427862, 0.009018294595414773, 0.0162061575259082, 0.00884891759082675, 0.0011776309608481825, 0.007021111040562391, -0.002698596053943038, -0.0035682133626192807, 0.028135420934297144, 0.013477462432533503, 0.013544609047472476, 0.0022183450624346734, 0.006771092119766399, 0.00332118928572163, -0.006803451149538159, 0.002766688078967854, 0.015035194372478872, -0.00796555664986372, 0.0015076297458261252, 0.01049118052558042, 0.0024186591658741236, -0.003369454239611514, 0.00675388509221375, 0.01967241871029837, -0.004973454574495554, 0.017254000002518297, 0.020157080613449216, 0.002680788551270962, -0.003185041752457619, 0.008433964965119958, -0.006047173061221838]
+[2024-04-23 10:42:46] utils.py(236) : train_score_list = [20.5917, 20.5645, 20.5793, 20.5176, 20.5279, 20.6247, 20.6662, 20.6381, 20.6188, 20.5745, 20.6542, 20.6303, 20.6875, 20.6943, 20.6879, 20.6497, 20.7237, 20.6596, 20.8407, 20.8222, 20.8036, 20.7993, 20.8818, 20.7538, 20.7486, 20.8052, 20.799, 20.8282, 20.8815, 20.7935, 20.8866, 20.886, 20.879, 20.8262, 20.8797, 20.8533, 20.821, 20.9225, 20.9455, 20.8786, 21.0325, 20.9751, 20.9884, 20.9572, 20.961, 20.9982, 20.9566, 21.0214, 20.9984, 20.9332]
