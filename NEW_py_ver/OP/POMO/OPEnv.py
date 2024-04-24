@@ -36,6 +36,12 @@ class OPEnv:
         self.problem_size = env_params['problem_size']
         self.pomo_size = env_params['pomo_size'] 
         
+        self.FLAG__use_saved_problems = False
+        self.saved_depot_xy = None
+        self.saved_node_xy = None
+        self.saved_node_prize = None
+        self.saved_index = None
+
         # Const @Load_Problem
         ####################################
         self.batch_size = None
@@ -72,23 +78,40 @@ class OPEnv:
         ################.####################
         self.reset_state = Reset_state()
         self.step_state = Step_state()
-        
-    def load_problems(self, batch_size, aug_factor=1) : 
+
+    def use_saved_problems(self, filename, device):
+        self.FLAG__use_saved_problems = True
+
+        loaded_dict = torch.load(filename, map_location=device)
+        self.saved_depot_xy = loaded_dict['depot_xy']
+        self.saved_node_xy = loaded_dict['node_xy']
+        self.saved_node_prize = loaded_dict['node_demand']
+        self.saved_index = 0    
+
+    def load_problems(self, batch_size, aug_factor=8) : 
         self.batch_size = batch_size
         
-        depot_xy, node_xy, node_prize = get_random_problems(batch_size, self.problem_size)
+        if not self.FLAG__use_saved_problems:
+            depot_xy, node_xy, node_prize = get_random_problems(batch_size, self.problem_size)
+        else:
+            depot_xy = self.saved_depot_xy[self.saved_index:self.saved_index+batch_size]
+            node_xy = self.saved_node_xy[self.saved_index:self.saved_index+batch_size]
+            node_prize = self.saved_node_prize[self.saved_index:self.saved_index+batch_size]
+            self.saved_index += batch_size
+
         self.depot_xy = depot_xy
         self.node_xy = node_xy
+
         if aug_factor > 1:
             if aug_factor == 8:
                 self.batch_size = self.batch_size * 8
-                depot_xy = augment_xy_data_by_8_fold(depot_xy)
-                node_xy = augment_xy_data_by_8_fold(node_xy)
+                self.depot_xy = augment_xy_data_by_8_fold(depot_xy)
+                self.node_xy = augment_xy_data_by_8_fold(node_xy)
                 node_prize = node_prize.repeat(8, 1)
             else:
                 raise NotImplementedError
                 
-        self.depot_node_xy = torch.cat((depot_xy, node_xy), dim=1)
+        self.depot_node_xy = torch.cat((self.depot_xy, self.node_xy), dim=1)
         # shape: (batch, problem+1, 2)
         depot_prize = torch.zeros(size=(self.batch_size, 1))
         # shape: (batch, 1)
@@ -99,8 +122,8 @@ class OPEnv:
         self.BATCH_IDX = torch.arange(self.batch_size)[:, None].expand(self.batch_size, self.pomo_size)
         self.POMO_IDX = torch.arange(self.pomo_size)[None, :].expand(self.batch_size, self.pomo_size)
 
-        self.reset_state.depot_xy = depot_xy
-        self.reset_state.node_xy = node_xy
+        self.reset_state.depot_xy = self.depot_xy
+        self.reset_state.node_xy = self.node_xy
         self.reset_state.node_prize = node_prize
         
         self.step_state.BATCH_IDX = self.BATCH_IDX
@@ -117,7 +140,7 @@ class OPEnv:
         # shape: (batch, pomo)
         self.ninf_mask_first_step = torch.ones(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
         # shape: (batch, pomo)
-        self.remaining_len = 2*torch.ones(size=(self.batch_size, self.pomo_size))               
+        self.remaining_len = 4*torch.ones(size=(self.batch_size, self.pomo_size))               
         # shape: (batch, pomo)
         self.visited_ninf_flag = torch.zeros(size=(self.batch_size, self.pomo_size, self.problem_size+1))
         # shape: (batch, pomo, problem+1)
@@ -263,7 +286,6 @@ class OPEnv:
         return len_to_depot
         
     def calculate_future_len(self) : 
-        
         self.node_xy_expanded = self.node_xy.unsqueeze(dim=1).expand(-1, self.problem_size, -1, -1)
         #shape: (batch, pomo, problem, 2)
         self.current_xy_expanded = self.node_xy_current.unsqueeze(dim=2).expand(-1, -1, self.problem_size, -1)

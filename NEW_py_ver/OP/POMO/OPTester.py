@@ -4,8 +4,8 @@ import torch
 import os
 from logging import getLogger
 
-from OPEnv import CVRPEnv as Env
-from OPModel import CVRPModel as Model
+from OPEnv import OPEnv as Env
+from OPModel import OPModel as Model
 
 from utils.utils import *
 
@@ -121,10 +121,10 @@ class OPTester:
 
         max_pomo_reward, _ = aug_reward.max(dim=2)  # get best results from pomo
         # shape: (augmentation, batch)
-        no_aug_score = -max_pomo_reward[0, :].float().mean()  # negative sign to make positive value
-
+        no_aug_score = max_pomo_reward[0, :].float().mean()  #  no negative sign
+        
         max_aug_pomo_reward, _ = max_pomo_reward.max(dim=0)  # get best results from augmentation
         # shape: (batch,)
-        aug_score = -max_aug_pomo_reward.float().mean()  # negative sign to make positive value
+        aug_score = max_aug_pomo_reward.float().mean()  # no negative sign
 
         return no_aug_score.item(), aug_score.item()
