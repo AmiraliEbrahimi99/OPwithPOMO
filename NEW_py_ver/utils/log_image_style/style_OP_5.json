@@ -10,8 +10,8 @@
     },
   
     "ylim": {
-      "min": 6.12,
-      "max": 6.40
+      "min": null,
+      "max": null
     },
   
     "grid": true
