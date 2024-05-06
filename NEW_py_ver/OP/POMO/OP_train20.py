@@ -51,7 +51,7 @@ optimizer_params = {
         'weight_decay': 1e-6
     },
     'scheduler': {
-        'milestones': [501,],
+        'milestones': [601,],
         'gamma': 0.1
     }
 }
@@ -59,7 +59,7 @@ optimizer_params = {
 trainer_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
-    'epochs': 510 ,
+    'epochs': 610 ,
     'train_episodes': 10*1000,
     'train_batch_size': 64,
     'prev_model_path': None,

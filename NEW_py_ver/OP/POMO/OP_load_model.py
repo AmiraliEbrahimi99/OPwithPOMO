@@ -22,7 +22,7 @@ from utils.utils import *
 ##########################################################################################
 # Machine Environment Config
 
-DEBUG_MODE = True
+DEBUG_MODE = False 
 USE_CUDA = not DEBUG_MODE
 CUDA_DEVICE_NUM = 0
 
@@ -42,8 +42,8 @@ from OPTester import OPTester as Tester
 # parameters
 
 env_params = {
-    'problem_size': 20,
-    'pomo_size': 20,
+    'problem_size': 8,
+    'pomo_size': 8,
 }
 
 model_params = {
@@ -149,8 +149,8 @@ class OPTester:
             selected, _ = self.model(state)
             # shape: (batch, pomo)
             state, reward, done = self.env.step(selected)     
-            print(f'selected node is : {selected}')
-            print(f'next state is : {state}')   
+            print(f'{selected}')
+            # print(f'next state is : {state}')   
         
 if __name__ == '__main__' : 
     tester = OPTester(env_params=env_params, model_params=model_params, tester_params=tester_params)
