@@ -71,8 +71,8 @@ tester_params = {
     'aug_factor': 8,
     'aug_batch_size': 400,
     'test_data_load': {
-        'enable': False,
-        'filename': '../vrp100_test_seed1234.pt'
+        'enable': True,
+        'filename': './problem.pt'
     },
 }
 if tester_params['augmentation_enable']:
@@ -118,7 +118,8 @@ class OPTester:
         # ENV and MODEL
         self.env = Env(**self.env_params)
         self.model = Model(**self.model_params)
-
+        if self.tester_params['test_data_load']['enable']:
+            self.env.use_saved_problems(self.tester_params['test_data_load']['filename'], self.device)
         # Restore
         model_load = tester_params['model_load']
         checkpoint_fullname = '{path}/checkpoint-{epoch}.pt'.format(**model_load)
@@ -128,7 +129,7 @@ class OPTester:
         # utility
         self.time_estimator = TimeEstimator()
     
-    def run(self, batch_size : int = 1):
+    def run(self, batch_size : int = 2):
         # Augmentation
         ###############################################
         if self.tester_params['augmentation_enable']:
@@ -139,9 +140,9 @@ class OPTester:
         self.model.eval()
         with torch.no_grad():
             self.env.load_problems(batch_size, aug_factor)
-            reset_state, _, _ = self.env.reset()
-            print(reset_state)
-            self.model.pre_forward(reset_state)
+            self.reset_state, _, _ = self.env.reset()
+            print(self.reset_state)
+            self.model.pre_forward(self.reset_state)
         
         ###############################################
         state, reward, done = self.env.pre_step()
@@ -150,7 +151,7 @@ class OPTester:
             # shape: (batch, pomo)
             state, reward, done = self.env.step(selected)     
             print(f'selected node is : {selected}')
-            print(f'next state is : {state}')   
+            # print(f'next state is : {state}')   
         
 if __name__ == '__main__' : 
     tester = OPTester(env_params=env_params, model_params=model_params, tester_params=tester_params)
