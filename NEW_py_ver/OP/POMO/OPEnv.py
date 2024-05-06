@@ -138,7 +138,7 @@ class OPEnv:
 
         self.at_the_depot = torch.ones(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
         # shape: (batch, pomo)
-        self.ninf_mask_first_step = torch.zeros(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
+        self.ninf_mask_first_step = torch.ones(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
         # shape: (batch, pomo)
         self.remaining_len = torch.ones(size=(self.batch_size, self.pomo_size))               
         # shape: (batch, pomo)
@@ -193,19 +193,14 @@ class OPEnv:
         selected_len = self.calculate_two_distance()
 
         self.first_step_len_too_large = (self.remaining_len/2 < selected_len)               #infeasible first step condition
-        self.ninf_mask_first_step[self.first_step_len_too_large] = True
+        self.ninf_mask_first_step[self.first_step_len_too_large] = False
         # shape: (batch, pomo)
 
         if self.selected_count == 2 :                                                       #first step    
-            # print(f'first step mask {self.ninf_mask_first_step}')                            
-            selected = torch.where(self.ninf_mask_first_step, selected, torch.tensor(0))        #using 'where' method to change only one element of tensor
+            self.current_node = torch.where(self.ninf_mask_first_step, selected, torch.tensor(0))        #using 'where' method to change only one element of tensor
             selected_len = torch.where(self.ninf_mask_first_step, selected_len, torch.tensor(0.0))
-            self.visited_ninf_flag[self.ninf_mask_first_step.unsqueeze(2).expand_as(self.visited_ninf_flag)] = float('-inf')
+            self.visited_ninf_flag[~self.ninf_mask_first_step.unsqueeze(2).expand_as(self.visited_ninf_flag)] = float('-inf')
             self.finished = torch.where(self.ninf_mask_first_step, self.finished, torch.tensor(bool(True)))
-
-        if self.selected_count == 3 :                                                        #second step (to correct wrong remaining length bug)
-            selected_len = torch.where(self.ninf_mask_first_step, selected_len, torch.tensor(0.0))
-        # print(f'end {self.visited_ninf_flag}')
 
         self.prize_list = self.depot_node_prize[:, None, :].expand(self.batch_size, self.pomo_size, -1)
         # shape: (batch, pomo, problem+1)
@@ -214,11 +209,11 @@ class OPEnv:
         self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
         # shape: (batch, pomo)
         self.collected_prize += self.selected_prize
-        
-        # print(f'selected_nodes : {selected} \n selected_len : {selected_len} \n')
+        # print(f'last_nodes : {self.last_visited_node}')
+  
         # print(f'remaining_len before step : {self.remaining_len}\n')
         self.remaining_len -= selected_len
-        # print(f'remaining_len after step: {self.remaining_len}\n')
+        # print(f'remaining_len: {self.remaining_len}\n')
         # print(f'prize {self.collected_prize}')
 
         self.visited_ninf_flag[self.BATCH_IDX, self.POMO_IDX, selected] = float('-inf')
