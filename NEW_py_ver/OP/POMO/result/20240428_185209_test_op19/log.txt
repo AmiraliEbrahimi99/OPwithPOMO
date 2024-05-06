@@ -1,0 +1,19 @@
+[2024-04-28 18:52:10] OP_test20.py(104) : DEBUG_MODE: False
+[2024-04-28 18:52:10] OP_test20.py(105) : USE_CUDA: True, CUDA_DEVICE_NUM: 0
+[2024-04-28 18:52:10] OP_test20.py(106) : env_params{'problem_size': 19, 'pomo_size': 19}
+[2024-04-28 18:52:10] OP_test20.py(106) : model_params{'embedding_dim': 128, 'sqrt_embedding_dim': 11.313708498984761, 'encoder_layer_num': 6, 'qkv_dim': 16, 'head_num': 8, 'logit_clipping': 10, 'ff_hidden_dim': 512, 'eval_type': 'argmax'}
+[2024-04-28 18:52:10] OP_test20.py(106) : tester_params{'use_cuda': True, 'cuda_device_num': 0, 'model_load': {'path': './result/saved_OP20_model', 'epoch': 510}, 'test_episodes': 10000, 'test_batch_size': 1000, 'augmentation_enable': False, 'aug_factor': 8, 'aug_batch_size': 400, 'test_data_load': {'enable': False, 'filename': '../vrp100_test_seed1234.pt'}}
+[2024-04-28 18:52:10] OP_test20.py(106) : logger_params{'log_file': {'desc': 'test_op20', 'filename': 'log.txt', 'filepath': './result/20240428_185209_test_op20'}}
+[2024-04-28 18:52:14] OPTester.py(83) : episode 1000/10000, Elapsed[0.03m], Remain[0.23m], score:24.504, aug_score:24.504
+[2024-04-28 18:52:14] OPTester.py(83) : episode 2000/10000, Elapsed[0.03m], Remain[0.14m], score:24.725, aug_score:24.725
+[2024-04-28 18:52:15] OPTester.py(83) : episode 3000/10000, Elapsed[0.04m], Remain[0.10m], score:24.824, aug_score:24.824
+[2024-04-28 18:52:15] OPTester.py(83) : episode 4000/10000, Elapsed[0.05m], Remain[0.08m], score:24.413, aug_score:24.413
+[2024-04-28 18:52:16] OPTester.py(83) : episode 5000/10000, Elapsed[0.06m], Remain[0.06m], score:24.141, aug_score:24.141
+[2024-04-28 18:52:16] OPTester.py(83) : episode 6000/10000, Elapsed[0.07m], Remain[0.05m], score:24.634, aug_score:24.634
+[2024-04-28 18:52:17] OPTester.py(83) : episode 7000/10000, Elapsed[0.08m], Remain[0.03m], score:24.383, aug_score:24.383
+[2024-04-28 18:52:17] OPTester.py(83) : episode 8000/10000, Elapsed[0.08m], Remain[0.02m], score:24.041, aug_score:24.041
+[2024-04-28 18:52:18] OPTester.py(83) : episode 9000/10000, Elapsed[0.09m], Remain[0.01m], score:24.323, aug_score:24.323
+[2024-04-28 18:52:18] OPTester.py(83) : episode 10000/10000, Elapsed[0.10m], Remain[0.00m], score:23.981, aug_score:23.981
+[2024-04-28 18:52:18] OPTester.py(88) :  *** Test Done *** 
+[2024-04-28 18:52:18] OPTester.py(89) :  NO-AUG SCORE: 24.3969 
+[2024-04-28 18:52:18] OPTester.py(90) :  AUGMENTATION SCORE: 24.3969 
