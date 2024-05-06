@@ -138,7 +138,7 @@ class OPEnv:
 
         self.at_the_depot = torch.ones(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
         # shape: (batch, pomo)
-        self.ninf_mask_first_step = torch.ones(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
+        self.ninf_mask_first_step = torch.zeros(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
         # shape: (batch, pomo)
         self.remaining_len = torch.ones(size=(self.batch_size, self.pomo_size))               
         # shape: (batch, pomo)
@@ -193,14 +193,14 @@ class OPEnv:
         selected_len = self.calculate_two_distance()
 
         self.first_step_len_too_large = (self.remaining_len/2 < selected_len)               #infeasible first step condition
-        self.ninf_mask_first_step[self.first_step_len_too_large] = False
+        self.ninf_mask_first_step[self.first_step_len_too_large] = True
         # shape: (batch, pomo)
 
         if self.selected_count == 2 :                                                       #first step    
             # print(f'first step mask {self.ninf_mask_first_step}')                            
             selected = torch.where(self.ninf_mask_first_step, selected, torch.tensor(0))        #using 'where' method to change only one element of tensor
             selected_len = torch.where(self.ninf_mask_first_step, selected_len, torch.tensor(0.0))
-            self.visited_ninf_flag[~self.ninf_mask_first_step.unsqueeze(2).expand_as(self.visited_ninf_flag)] = float('-inf')
+            self.visited_ninf_flag[self.ninf_mask_first_step.unsqueeze(2).expand_as(self.visited_ninf_flag)] = float('-inf')
             self.finished = torch.where(self.ninf_mask_first_step, self.finished, torch.tensor(bool(True)))
 
         if self.selected_count == 3 :                                                        #second step (to correct wrong remaining length bug)
