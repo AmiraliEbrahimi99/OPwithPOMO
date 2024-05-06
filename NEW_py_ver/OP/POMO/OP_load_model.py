@@ -1,0 +1,157 @@
+##########################################################################################
+# Path Config
+
+import os
+import sys
+
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, "..")  # for problem_def
+sys.path.insert(0, "../..")  # for utils
+
+
+import torch
+
+import os
+from logging import getLogger
+
+from OPEnv import OPEnv as Env
+from OPModel import OPModel as Model
+
+from utils.utils import *
+
+##########################################################################################
+# Machine Environment Config
+
+DEBUG_MODE = True
+USE_CUDA = not DEBUG_MODE
+CUDA_DEVICE_NUM = 0
+
+
+
+
+##########################################################################################
+# import
+
+import logging
+from utils.utils import create_logger, copy_all_src
+
+from OPTester import OPTester as Tester
+
+
+##########################################################################################
+# parameters
+
+env_params = {
+    'problem_size': 20,
+    'pomo_size': 20,
+}
+
+model_params = {
+    'embedding_dim': 128,
+    'sqrt_embedding_dim': 128**(1/2),
+    'encoder_layer_num': 6,
+    'qkv_dim': 16,
+    'head_num': 8,
+    'logit_clipping': 10,
+    'ff_hidden_dim': 512,
+    'eval_type': 'argmax',
+}
+
+
+tester_params = {
+    'use_cuda': USE_CUDA,
+    'cuda_device_num': CUDA_DEVICE_NUM,
+    'model_load': {
+        'path': './result/saved_OP20_model',  # directory path of pre-trained model and log files saved.
+        'epoch': 510,  # epoch version of pre-trained model to laod.
+    },
+    'test_episodes': 10*1000,
+    'test_batch_size': 1000,
+    'augmentation_enable': False,
+    'aug_factor': 8,
+    'aug_batch_size': 400,
+    'test_data_load': {
+        'enable': False,
+        'filename': '../vrp100_test_seed1234.pt'
+    },
+}
+if tester_params['augmentation_enable']:
+    tester_params['test_batch_size'] = tester_params['aug_batch_size']
+
+
+logger_params = {
+    'log_file': {
+        'desc': 'test_op20',
+        'filename': 'log.txt'
+    }
+}
+
+
+class OPTester:
+    def __init__(self,
+                 env_params: dict,
+                 model_params: dict,
+                 tester_params: dict):
+
+        # save arguments
+        self.env_params = env_params
+        self.model_params = model_params
+        self.tester_params = tester_params
+
+        # result folder, logger
+        self.logger = getLogger(name='trainer')
+        self.result_folder = get_result_folder()
+
+
+        # cuda
+        USE_CUDA = self.tester_params['use_cuda']
+        if USE_CUDA:
+            cuda_device_num = self.tester_params['cuda_device_num']
+            torch.cuda.set_device(cuda_device_num)
+            device = torch.device('cuda', cuda_device_num)
+            torch.set_default_tensor_type('torch.cuda.FloatTensor')
+        else:
+            device = torch.device('cpu')
+            torch.set_default_tensor_type('torch.FloatTensor')
+        self.device = device
+
+        # ENV and MODEL
+        self.env = Env(**self.env_params)
+        self.model = Model(**self.model_params)
+
+        # Restore
+        model_load = tester_params['model_load']
+        checkpoint_fullname = '{path}/checkpoint-{epoch}.pt'.format(**model_load)
+        checkpoint = torch.load(checkpoint_fullname, map_location=device)
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+
+        # utility
+        self.time_estimator = TimeEstimator()
+    
+    def run(self, batch_size : int = 1):
+        # Augmentation
+        ###############################################
+        if self.tester_params['augmentation_enable']:
+            aug_factor = self.tester_params['aug_factor']
+        else:
+            aug_factor = 1 
+        
+        self.model.eval()
+        with torch.no_grad():
+            self.env.load_problems(batch_size, aug_factor)
+            reset_state, _, _ = self.env.reset()
+            print(reset_state)
+            self.model.pre_forward(reset_state)
+        
+        ###############################################
+        state, reward, done = self.env.pre_step()
+        while not done:
+            selected, _ = self.model(state)
+            # shape: (batch, pomo)
+            state, reward, done = self.env.step(selected)     
+            print(f'selected node is : {selected}')
+            print(f'next state is : {state}')   
+        
+if __name__ == '__main__' : 
+    tester = OPTester(env_params=env_params, model_params=model_params, tester_params=tester_params)
+    tester.run()
