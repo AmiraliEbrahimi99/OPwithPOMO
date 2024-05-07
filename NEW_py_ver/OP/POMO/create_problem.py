@@ -54,5 +54,5 @@ saved_dict = {
 }
 
 # Save the dictionary to a file
-filename = 'saved_problem.pth'
+filename = 'saved_problem.pt'
 torch.save(saved_dict, filename)

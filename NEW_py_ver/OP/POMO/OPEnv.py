@@ -140,7 +140,7 @@ class OPEnv:
         # shape: (batch, pomo)
         self.ninf_mask_first_step = torch.ones(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
         # shape: (batch, pomo)
-        self.remaining_len = torch.ones(size=(self.batch_size, self.pomo_size))               
+        self.remaining_len = 2 * torch.ones(size=(self.batch_size, self.pomo_size))               
         # shape: (batch, pomo)
         self.visited_ninf_flag = torch.zeros(size=(self.batch_size, self.pomo_size, self.problem_size+1))
         # shape: (batch, pomo, problem+1)
