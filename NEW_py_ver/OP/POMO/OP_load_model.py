@@ -22,7 +22,7 @@ from utils.utils import *
 ##########################################################################################
 # Machine Environment Config
 
-DEBUG_MODE = False 
+DEBUG_MODE = True 
 USE_CUDA = not DEBUG_MODE
 CUDA_DEVICE_NUM = 0
 
@@ -42,8 +42,8 @@ from OPTester import OPTester as Tester
 # parameters
 
 env_params = {
-    'problem_size': 8,
-    'pomo_size': 8,
+    'problem_size': 20,
+    'pomo_size': 20,
 }
 
 model_params = {
@@ -71,8 +71,8 @@ tester_params = {
     'aug_factor': 8,
     'aug_batch_size': 400,
     'test_data_load': {
-        'enable': True,
-        'filename': './problem.pt'
+        'enable': False,
+        'filename': './saved_problem.pt'
     },
 }
 if tester_params['augmentation_enable']:
@@ -92,6 +92,9 @@ class OPTester:
                  env_params: dict,
                  model_params: dict,
                  tester_params: dict):
+
+        self.step_count = 0 
+        self.path = {}
 
         # save arguments
         self.env_params = env_params
@@ -129,7 +132,7 @@ class OPTester:
         # utility
         self.time_estimator = TimeEstimator()
     
-    def run(self, batch_size : int = 2):
+    def run(self, batch_size : int = 1):
         # Augmentation
         ###############################################
         if self.tester_params['augmentation_enable']:
@@ -147,12 +150,57 @@ class OPTester:
         ###############################################
         state, reward, done = self.env.pre_step()
         while not done:
+            self.step_count += 1 
             selected, _ = self.model(state)
             # shape: (batch, pomo)
-            state, reward, done = self.env.step(selected)     
-            print(f'{selected}')
-            # print(f'next state is : {state}')   
+            state, reward, done = self.env.step(selected) 
+            self.path[self.step_count] = selected    
+            # print(f'{selected}')
+            # print(f'next state is : {state}')
+     
+        print(reward)
+        self.max_index = torch.argmax(reward)
+
+    def plot(self,batch : int = 0 , pomo : int = 0) :
+        self.plot_path=[] 
+        for i in self.path:
+            self.plot_path.append(int(self.path[i][batch][pomo]))
+
+        print(f'this is the path for batch: {batch}, pomo:{pomo} : {self.plot_path}')
+        self.plot_depot = self.reset_state.depot_xy[batch][0].tolist()
+        self.plot_nodes = self.reset_state.node_xy[batch].tolist()
+        self.plot_prize = self.reset_state.node_prize[batch]
+        self.plot_nodes = np.array(self.plot_nodes)
+        
+        # Plot the nodes
+        plt.scatter(self.plot_nodes[:, 0], self.plot_nodes[:, 1], s=self.plot_prize*100, color='grey')
+        for i, node in enumerate(self.plot_nodes): 
+            plt.text(node[0], node[1], str(i + 1), fontsize=12, ha='center', va='center')
+
+        # Plot the depot with a different color
+        plt.scatter(self.plot_depot[0], self.plot_depot[1], color='red')
+        plt.text(self.plot_depot[0], self.plot_depot[1], 'Depot', fontsize=12, ha='center', va='bottom')
+
+        # plot arrows
+        self.plot_nodes = self.reset_state.node_xy[batch].tolist()
+        self.plot_depot = self.reset_state.depot_xy[batch].tolist()
+        self.plot_nodes_depot = self.plot_depot + self.plot_nodes
+        for i in range(len(self.plot_path) - 1):
+
+            start = self.plot_nodes_depot[self.plot_path[i] ]
+            end = self.plot_nodes_depot[self.plot_path[i + 1] ]
+            plt.arrow(start[0], start[1], end[0] - start[0], end[1] - start[1], head_width=0.05, head_length=0.02,
+                        fc='yellow', ec='red')
+
+        plt.title('Orienteering Problem')
+        plt.xlabel('X-coordinate')
+        plt.ylabel('Y-coordinate')
+        plt.grid(True)
+        plt.axis('equal')
+        plt.show()  
+
         
 if __name__ == '__main__' : 
-    tester = OPTester(env_params=env_params, model_params=model_params, tester_params=tester_params)
-    tester.run()
+    self = OPTester(env_params=env_params, model_params=model_params, tester_params=tester_params)
+    self.run(batch_size=1)
+    self.plot(0,self.max_index)
