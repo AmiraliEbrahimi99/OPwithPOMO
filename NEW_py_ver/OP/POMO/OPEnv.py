@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 import torch
-import numpy as np
 from OPProblemDef import get_random_problems, augment_xy_data_by_8_fold
 
 
@@ -79,13 +78,13 @@ class OPEnv:
         self.reset_state = Reset_state()
         self.step_state = Step_state()
 
-    def use_saved_problems(self, filename, device):             ##@todo
+    def use_saved_problems(self, filename, device):             
         self.FLAG__use_saved_problems = True
 
         loaded_dict = torch.load(filename, map_location=device)
         self.saved_depot_xy = loaded_dict['depot_xy']
         self.saved_node_xy = loaded_dict['node_xy']
-        self.saved_node_prize = loaded_dict['node_demand']
+        self.saved_node_prize = loaded_dict['node_prize']
         self.saved_index = 0    
 
     def load_problems(self, batch_size, aug_factor=1) : 
@@ -98,7 +97,7 @@ class OPEnv:
             node_xy = self.saved_node_xy[self.saved_index:self.saved_index+batch_size]
             node_prize = self.saved_node_prize[self.saved_index:self.saved_index+batch_size]
             self.saved_index += batch_size
-
+       
         self.depot_xy = depot_xy
         self.node_xy = node_xy
 
@@ -135,12 +134,11 @@ class OPEnv:
         # shape: (batch, pomo)
         self.selected_node_list = torch.zeros((self.batch_size, self.pomo_size, 0), dtype=torch.long)
         # shape: (batch, pomo, 0~)
-
         self.at_the_depot = torch.ones(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
         # shape: (batch, pomo)
-        self.ninf_mask_first_step = torch.ones(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
+        self.ninf_mask_first_step = torch.zeros(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
         # shape: (batch, pomo)
-        self.remaining_len = 2 * torch.ones(size=(self.batch_size, self.pomo_size))               
+        self.remaining_len = 2*torch.ones(size=(self.batch_size, self.pomo_size))               
         # shape: (batch, pomo)
         self.visited_ninf_flag = torch.zeros(size=(self.batch_size, self.pomo_size, self.problem_size+1))
         # shape: (batch, pomo, problem+1)
@@ -148,8 +146,6 @@ class OPEnv:
         # shape: (batch, pomo, problem+1)
         self.finished = torch.zeros(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
         # shape: (batch, pomo)
-
-        #new tensor 
         self.collected_prize = torch.zeros(size=(self.batch_size, self.pomo_size))
         # shape: (batch, pomo)
         
@@ -169,7 +165,6 @@ class OPEnv:
         return self.step_state, reward, done    
     
     def step(self, selected) : 
-
         # selected.shape: (batch, pomo)
 
         # Dynamic-1
@@ -186,46 +181,40 @@ class OPEnv:
         self.selected_node_list = torch.cat((self.selected_node_list, self.current_node[:, :, None]), dim=2)
         # shape: (batch, pomo, 0~)
         
+        self.len_to_depot = self.calculate_len_to_depot()
+        # shape: (batch, pomo)
+
+        self.first_step_len_too_large = (self.remaining_len/2 < self.len_to_depot)          #infeasible first step condition
+        self.ninf_mask_first_step[self.first_step_len_too_large] = True
+        # shape: (batch, pomo)
+        if self.selected_count == 1 :                     #first step 
+            self.visited_ninf_flag[self.ninf_mask_first_step.unsqueeze(2).expand_as(self.visited_ninf_flag)] = float('-inf')
+            self.finished[self.ninf_mask_first_step] = True
+
         # Dynamic-2
         ####################################
         self.at_the_depot = (selected == 0)
         
-        selected_len = self.calculate_two_distance()
-
-        self.first_step_len_too_large = (self.remaining_len/2 < selected_len)               #infeasible first step condition
-        self.ninf_mask_first_step[self.first_step_len_too_large] = False
-        # shape: (batch, pomo)
-
-        if self.selected_count == 2 :                                                       #first step    
-            self.current_node = torch.where(self.ninf_mask_first_step, selected, torch.tensor(0))        #using 'where' method to change only one element of tensor
-            selected_len = torch.where(self.ninf_mask_first_step, selected_len, torch.tensor(0.0))
-            self.visited_ninf_flag[~self.ninf_mask_first_step.unsqueeze(2).expand_as(self.visited_ninf_flag)] = float('-inf')
-            self.finished = torch.where(self.ninf_mask_first_step, self.finished, torch.tensor(bool(True)))
-
         self.prize_list = self.depot_node_prize[:, None, :].expand(self.batch_size, self.pomo_size, -1)
         # shape: (batch, pomo, problem+1)
         self.gathering_index = selected[:, :, None]
         # shape: (batch, pomo, 1)
         self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
         # shape: (batch, pomo)
+
         self.collected_prize += self.selected_prize
-        # print(f'last_nodes : {self.last_visited_node}')
-  
-        # print(f'remaining_len before step : {self.remaining_len}\n')
+    
+        selected_len = self.calculate_two_distance()
+
         self.remaining_len -= selected_len
-        # print(f'remaining_len: {self.remaining_len}\n')
-        # print(f'prize {self.collected_prize}')
 
         self.visited_ninf_flag[self.BATCH_IDX, self.POMO_IDX, selected] = float('-inf')
         # shape: (batch, pomo, problem+1)
         self.visited_ninf_flag[:, :, 0][~self.at_the_depot] = 0  # depot is considered unvisited, unless you are AT the depot
-        # print(selected,'\n',self.visited_ninf_flag)
 
         self.ninf_mask = self.visited_ninf_flag.clone()
         round_error_epsilon = 0.00001
         
-        self.len_to_depot = self.calculate_len_to_depot()
-        # shape: (batch, pomo)
         self.future_len = self.calculate_future_len()       
         # shape: (batch, pomo, problem)
         self.len_to_depot_expanded = self.len_to_depot.unsqueeze(dim=1).expand(-1,self.problem_size,-1)
@@ -260,7 +249,7 @@ class OPEnv:
         done = self.finished.all()
         if done:
             reward = self.collected_prize
-            # print(f'\nxy\n {self.node_xy}\n\n\n\n')
+            # print(f'########selected nodes######## \n{self.selected_node_list}\n##############reward######### \n{reward}')    #for testing
         else:
             reward = None
 
@@ -304,7 +293,6 @@ class OPEnv:
         current_node_zero_indexed = self.current_node
         last_visited_node_zero_indexed = self.last_visited_node 
         
-        #todo 
         # Expanding the dimensions of current_node to match the dimensions of node_xy for gathering
         current_node_expanded = current_node_zero_indexed.unsqueeze(dim=2).expand(-1, -1, 2)
         #shape: (batch, problem, 2)

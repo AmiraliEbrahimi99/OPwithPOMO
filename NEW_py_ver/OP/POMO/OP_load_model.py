@@ -43,8 +43,8 @@ from OPTester import OPTester as Tester
 # parameters
 
 env_params = {
-    'problem_size': 8,
-    'pomo_size': 8,
+    'problem_size': 20,
+    'pomo_size': 20,
 }
 
 model_params = {
