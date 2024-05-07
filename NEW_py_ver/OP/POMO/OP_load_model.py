@@ -71,7 +71,7 @@ tester_params = {
     'aug_factor': 8,
     'aug_batch_size': 400,
     'test_data_load': {
-        'enable': False,
+        'enable': True,
         'filename': './saved_problem.pt'
     },
 }
@@ -145,16 +145,21 @@ class OPTester:
             self.model.pre_forward(self.reset_state)
         
         ###############################################
-        state, reward, done = self.env.pre_step()
+        state, self.reward, done = self.env.pre_step()
 
         while not done:
             self.step_count += 1 
             selected, _ = self.model(state)
             # shape: (batch, pomo)
-            state, reward, done = self.env.step(selected)     
+            state, self.reward, done = self.env.step(selected)     
             self.path[self.step_count] = selected
 
-    def plot(self,batch : int = 0 , pomo : int = 0) :
+    def plot(self,batch : int = 0 , pomo : int = 0 , best_result : bool = False) :
+        print(f'whole reawrds are {self.reward}')
+        if best_result: 
+            pomo = torch.argmax(self.reward)
+            print(f'the best pomo is :{pomo}')
+
         self.plot_path=[] 
         for i in self.path:
             self.plot_path.append(int(self.path[i][batch][pomo]))
@@ -162,10 +167,12 @@ class OPTester:
         print(f'this is the path for batch: {batch}, pomo:{pomo} : {self.plot_path}')
         self.plot_depot = self.reset_state.depot_xy[batch][0].tolist()
         self.plot_nodes = self.reset_state.node_xy[batch].tolist()
+        self.plot_prize = self.reset_state.node_prize[batch].tolist()
+        self.plot_size = [i * 100 for i in self.plot_prize]
         self.plot_nodes = np.array(self.plot_nodes)
-
+        # print(f'prizes : {self.plot_prize}')
         # Plot the nodes
-        plt.scatter(self.plot_nodes[:, 0], self.plot_nodes[:, 1], color='white')
+        plt.scatter(self.plot_nodes[:, 0], self.plot_nodes[:, 1], color='Gray', s = self.plot_size )
         for i, node in enumerate(self.plot_nodes):
             plt.text(node[0], node[1], str(i + 1), fontsize=12, ha='center', va='center')
 
@@ -181,8 +188,11 @@ class OPTester:
 
             start = self.plot_nodes_depot[self.plot_path[i] ]
             end = self.plot_nodes_depot[self.plot_path[i + 1] ]
+            if start == end :
+                continue
+            
             plt.arrow(start[0], start[1], end[0] - start[0], end[1] - start[1], head_width=0.05, head_length=0.02,
-                        fc='yellow', ec='red')
+                        fc='white', ec='red')
 
         plt.title('Orienteering Problem')
         plt.xlabel('X-coordinate')
@@ -194,5 +204,5 @@ class OPTester:
      
 if __name__ == '__main__' : 
     self = OPTester(env_params=env_params, model_params=model_params, tester_params=tester_params)
-    self.run(batch_size=2)
-    self.plot(1,6)
+    self.run(batch_size=1)
+    self.plot(batch=0,pomo=16)    
