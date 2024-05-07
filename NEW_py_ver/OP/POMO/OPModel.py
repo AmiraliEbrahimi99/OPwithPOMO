@@ -40,12 +40,13 @@ class OPModel(nn.Module):
 
         elif state.selected_count == 1:  # Second Move, POMO
             selected = torch.arange(start=1, end=pomo_size+1)[None, :].expand(batch_size, pomo_size)
+            selected[state.finished] = 0                                                                    #new condition
             prob = torch.ones(size=(batch_size, pomo_size))
 
         else:
             encoded_last_node = _get_encoding(self.encoded_nodes, state.current_node)
             # shape: (batch, pomo, embedding)
-            probs = self.decoder(encoded_last_node, state.remaining_len, ninf_mask=state.ninf_mask)          #@todo mask
+            probs = self.decoder(encoded_last_node, state.remaining_len, ninf_mask=state.ninf_mask)          
             # shape: (batch, pomo, problem+1)
 
             if self.training or self.model_params['eval_type'] == 'softmax':
