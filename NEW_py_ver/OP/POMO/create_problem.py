@@ -50,9 +50,9 @@ node_prize = torch.tensor([[8, 9, 2, 8, 4, 4, 2, 8, 3, 6, 9, 5, 1, 3, 1, 9, 7, 6
 saved_dict = {
     'depot_xy': depot_xy,
     'node_xy': node_xy,
-    'node_demand': node_prize  # Assuming node_demand is equivalent to node_prize
+    'node_prize': node_prize  
 }
 
 # Save the dictionary to a file
-filename = 'saved_problem.pth'
+filename = 'saved_problem.pt'
 torch.save(saved_dict, filename)
