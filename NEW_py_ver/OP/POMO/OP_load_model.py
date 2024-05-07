@@ -72,7 +72,7 @@ tester_params = {
     'aug_batch_size': 400,
     'test_data_load': {
         'enable': False,
-        'filename': '../vrp100_test_seed1234.pt'
+        'filename': './saved_problem.pt'
     },
 }
 if tester_params['augmentation_enable']:
@@ -92,7 +92,8 @@ class OPTester:
                  env_params: dict,
                  model_params: dict,
                  tester_params: dict):
-
+        self.step_count = 0 
+        self.path = {}
         # save arguments
         self.env_params = env_params
         self.model_params = model_params
@@ -118,7 +119,8 @@ class OPTester:
         # ENV and MODEL
         self.env = Env(**self.env_params)
         self.model = Model(**self.model_params)
-
+        if self.tester_params['test_data_load']['enable']:
+            self.env.use_saved_problems(self.tester_params['test_data_load']['filename'], self.device)
         # Restore
         model_load = tester_params['model_load']
         checkpoint_fullname = '{path}/checkpoint-{epoch}.pt'.format(**model_load)
@@ -139,19 +141,58 @@ class OPTester:
         self.model.eval()
         with torch.no_grad():
             self.env.load_problems(batch_size, aug_factor)
-            reset_state, _, _ = self.env.reset()
-            print(reset_state)
-            self.model.pre_forward(reset_state)
+            self.reset_state, _, _ = self.env.reset()
+            self.model.pre_forward(self.reset_state)
         
         ###############################################
         state, reward, done = self.env.pre_step()
+
         while not done:
+            self.step_count += 1 
             selected, _ = self.model(state)
             # shape: (batch, pomo)
             state, reward, done = self.env.step(selected)     
-            print(f'selected node is : {selected}')
-            print(f'next state is : {state}')   
+            self.path[self.step_count] = selected
+
+    def plot(self,batch : int = 0 , pomo : int = 0) :
+        self.plot_path=[] 
+        for i in self.path:
+            self.plot_path.append(int(self.path[i][batch][pomo]))
         
+        print(f'this is the path for batch: {batch}, pomo:{pomo} : {self.plot_path}')
+        self.plot_depot = self.reset_state.depot_xy[batch][0].tolist()
+        self.plot_nodes = self.reset_state.node_xy[batch].tolist()
+        self.plot_nodes = np.array(self.plot_nodes)
+
+        # Plot the nodes
+        plt.scatter(self.plot_nodes[:, 0], self.plot_nodes[:, 1], color='white')
+        for i, node in enumerate(self.plot_nodes):
+            plt.text(node[0], node[1], str(i + 1), fontsize=12, ha='center', va='center')
+
+        # Plot the depot with a different color
+        plt.scatter(self.plot_depot[0], self.plot_depot[1], color='red')
+        plt.text(self.plot_depot[0], self.plot_depot[1], 'Depot', fontsize=12, ha='center', va='bottom')
+
+        # plot arrows
+        self.plot_nodes = self.reset_state.node_xy[batch].tolist()
+        self.plot_depot = self.reset_state.depot_xy[batch].tolist()
+        self.plot_nodes_depot = self.plot_depot + self.plot_nodes
+        for i in range(len(self.plot_path) - 1):
+
+            start = self.plot_nodes_depot[self.plot_path[i] ]
+            end = self.plot_nodes_depot[self.plot_path[i + 1] ]
+            plt.arrow(start[0], start[1], end[0] - start[0], end[1] - start[1], head_width=0.05, head_length=0.02,
+                        fc='yellow', ec='red')
+
+        plt.title('Orienteering Problem')
+        plt.xlabel('X-coordinate')
+        plt.ylabel('Y-coordinate')
+        plt.grid(True)
+        plt.axis('equal')
+        plt.show()       
+
+     
 if __name__ == '__main__' : 
-    tester = OPTester(env_params=env_params, model_params=model_params, tester_params=tester_params)
-    tester.run()
+    self = OPTester(env_params=env_params, model_params=model_params, tester_params=tester_params)
+    self.run(batch_size=2)
+    self.plot(1,6)

@@ -140,7 +140,7 @@ class OPEnv:
         # shape: (batch, pomo)
         self.ninf_mask_first_step = torch.zeros(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
         # shape: (batch, pomo)
-        self.remaining_len = torch.ones(size=(self.batch_size, self.pomo_size))               
+        self.remaining_len = 2 * torch.ones(size=(self.batch_size, self.pomo_size))               
         # shape: (batch, pomo)
         self.visited_ninf_flag = torch.zeros(size=(self.batch_size, self.pomo_size, self.problem_size+1))
         # shape: (batch, pomo, problem+1)
@@ -201,8 +201,9 @@ class OPEnv:
             selected = torch.where(self.ninf_mask_first_step, selected, torch.tensor(0))        #using 'where' method to change only one element of tensor
             selected_len = torch.where(self.ninf_mask_first_step, selected_len, torch.tensor(0.0))
             self.visited_ninf_flag[self.ninf_mask_first_step.unsqueeze(2).expand_as(self.visited_ninf_flag)] = float('-inf')
-            self.finished = torch.where(self.ninf_mask_first_step, self.finished, torch.tensor(bool(True)))
-
+            # Update finished tensor using boolean indexing
+            self.finished[self.ninf_mask_first_step] = True
+            
         if self.selected_count == 3 :                                                        #second step (to correct wrong remaining length bug)
             selected_len = torch.where(self.ninf_mask_first_step, selected_len, torch.tensor(0.0))
         # print(f'end {self.visited_ninf_flag}')
