@@ -10,7 +10,7 @@ from TOPModel import TOPModel as Model
 from utils.utils import *
 
 
-class OPHSTester:
+class TOPTester:
     def __init__(self,
                  env_params,
                  model_params,

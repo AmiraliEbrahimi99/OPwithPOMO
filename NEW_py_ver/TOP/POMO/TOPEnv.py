@@ -1,13 +1,12 @@
 from dataclasses import dataclass
 import torch
-import numpy as np
 from TOPProblemDef import get_random_problems, augment_xy_data_by_8_fold
 
 
 @dataclass 
 class Reset_state : 
     depot_xy: torch.Tensor = None
-    # shape: (batch, depot, 2)
+    # shape: (batch, 1, 2)
     node_xy : torch.Tensor = None
     # shape: (batch, problem, 2)
     node_prize : torch.Tensor = None
@@ -79,13 +78,13 @@ class TOPEnv:
         self.reset_state = Reset_state()
         self.step_state = Step_state()
 
-    def use_saved_problems(self, filename, device):
+    def use_saved_problems(self, filename, device):             
         self.FLAG__use_saved_problems = True
 
         loaded_dict = torch.load(filename, map_location=device)
         self.saved_depot_xy = loaded_dict['depot_xy']
         self.saved_node_xy = loaded_dict['node_xy']
-        self.saved_node_prize = loaded_dict['node_demand']
+        self.saved_node_prize = loaded_dict['node_prize']
         self.saved_index = 0    
 
     def load_problems(self, batch_size, aug_factor=1) : 
@@ -98,7 +97,7 @@ class TOPEnv:
             node_xy = self.saved_node_xy[self.saved_index:self.saved_index+batch_size]
             node_prize = self.saved_node_prize[self.saved_index:self.saved_index+batch_size]
             self.saved_index += batch_size
-
+       
         self.depot_xy = depot_xy
         self.node_xy = node_xy
 
@@ -135,12 +134,11 @@ class TOPEnv:
         # shape: (batch, pomo)
         self.selected_node_list = torch.zeros((self.batch_size, self.pomo_size, 0), dtype=torch.long)
         # shape: (batch, pomo, 0~)
-
         self.at_the_depot = torch.ones(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
         # shape: (batch, pomo)
-        self.ninf_mask_first_step = torch.ones(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
+        self.ninf_mask_first_step = torch.zeros(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
         # shape: (batch, pomo)
-        self.remaining_len = 2*torch.ones(size=(self.batch_size, self.pomo_size))               
+        self.remaining_len = 1.5*torch.ones(size=(self.batch_size, self.pomo_size))               
         # shape: (batch, pomo)
         self.visited_ninf_flag = torch.zeros(size=(self.batch_size, self.pomo_size, self.problem_size+1))
         # shape: (batch, pomo, problem+1)
@@ -148,8 +146,6 @@ class TOPEnv:
         # shape: (batch, pomo, problem+1)
         self.finished = torch.zeros(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
         # shape: (batch, pomo)
-
-        #new tensor 
         self.collected_prize = torch.zeros(size=(self.batch_size, self.pomo_size))
         # shape: (batch, pomo)
         
@@ -170,7 +166,6 @@ class TOPEnv:
         return self.step_state, reward, done    
     
     def step(self, selected) : 
-
         # selected.shape: (batch, pomo)
 
         # Dynamic-1
@@ -187,41 +182,32 @@ class TOPEnv:
         self.selected_node_list = torch.cat((self.selected_node_list, self.current_node[:, :, None]), dim=2)
         # shape: (batch, pomo, 0~)
         
+        self.len_to_depot = self.calculate_len_to_depot()
+        # shape: (batch, pomo)
+
+        self.first_step_len_too_large = (self.remaining_len/2 < self.len_to_depot)          #infeasible first step condition
+        self.ninf_mask_first_step[self.first_step_len_too_large] = True
+        # shape: (batch, pomo)
+        if self.selected_count == 1 :                     #first step 
+            self.visited_ninf_flag[self.ninf_mask_first_step.unsqueeze(2).expand_as(self.visited_ninf_flag)] = float('-inf')
+            self.finished[self.ninf_mask_first_step] = True
+
         # Dynamic-2
         ####################################
         self.at_the_depot = (selected == 0)
         
-        selected_len = self.calculate_two_distance()
-
-        self.first_step_len_too_large = (self.remaining_len/2 < selected_len)               #infeasible first step condition
-        self.ninf_mask_first_step[self.first_step_len_too_large] = False
-        # shape: (batch, pomo)
-
-        if self.selected_count == 2 :                                                       #first step    
-            # print(f'first step mask {self.ninf_mask_first_step}')                            
-            selected = torch.where(self.ninf_mask_first_step, selected, torch.tensor(0))        #using 'where' method to change only one element of tensor
-            selected_len = torch.where(self.ninf_mask_first_step, selected_len, torch.tensor(0.0))
-            self.visited_ninf_flag[~self.ninf_mask_first_step.unsqueeze(2).expand_as(self.visited_ninf_flag)] = float('-inf')
-            self.finished = torch.where(self.ninf_mask_first_step, self.finished, torch.tensor(bool(True)))
-
-        if self.selected_count == 3 :                                                        #second step (to correct wrong remaining length bug)
-            selected_len = torch.where(self.ninf_mask_first_step, selected_len, torch.tensor(0.0))
-
         self.prize_list = self.depot_node_prize[:, None, :].expand(self.batch_size, self.pomo_size, -1)
         # shape: (batch, pomo, problem+1)
         self.gathering_index = selected[:, :, None]
         # shape: (batch, pomo, 1)
         self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
         # shape: (batch, pomo)
+
         self.collected_prize += self.selected_prize
+    
+        selected_len = self.calculate_two_distance()
 
-        # print(f'\nselected_nodes \n {selected} \nvisited \n {self.visited_ninf_flag}')
-
-        # print(f'selected_nodes : {selected} \n selected_len : {selected_len} \n')
-        # print(f'remaining_len before step : {self.remaining_len}\n')
         self.remaining_len -= selected_len
-        # print(f'remaining_len after step: {self.remaining_len}\n')
-        # print(f'prize {self.collected_prize}')
 
         self.visited_ninf_flag[self.BATCH_IDX, self.POMO_IDX, selected] = float('-inf')
         # shape: (batch, pomo, problem+1)
@@ -230,15 +216,10 @@ class TOPEnv:
         self.ninf_mask = self.visited_ninf_flag.clone()
         round_error_epsilon = 0.00001
         
-        self.len_to_depot = self.calculate_len_to_depot()
-        # shape: (batch, problem)
-
-        self.len_to_depot_expanded = self.len_to_depot.unsqueeze(dim=1).expand(-1,self.problem_size,-1)
-        # shape: (batch, pomo, problem)
-
         self.future_len = self.calculate_future_len()       
         # shape: (batch, pomo, problem)
-
+        self.len_to_depot_expanded = self.len_to_depot.unsqueeze(dim=1).expand(-1,self.problem_size,-1)
+        # shape: (batch, pomo, problem)
         self.remaining_len_expanded = self.remaining_len.unsqueeze(dim=2).expand(-1,-1,self.problem_size)
         # shape: (batch, pomo, problem)
         
@@ -255,17 +236,16 @@ class TOPEnv:
         # shape: (batch, pomo)
         self.finished = self.finished + self.newly_finished
         # shape: (batch, pomo)
-       
+        
         # do not mask depot for finished episode.
         self.ninf_mask[:, :, 0][self.finished] = 0
 
         if self.finished.all() :
             self.day_finished += 1
             self.finished = False
-            self.remaining_len[:,:] = 2 # reset length at the depot
-
-            print(f'prize {self.collected_prize}')
-            print(f'################################### End of day = {self.day_finished} ###########################\n\n')
+            self.remaining_len[:,:] = 1.5 # reset length at the depot
+            # print(f'prize {self.collected_prize}')
+            # print(f'################################### End of day = {self.day_finished} ###########################\n\n')
         
         self.step_state.selected_count = self.selected_count
         self.step_state.remaining_len = self.remaining_len
@@ -277,7 +257,7 @@ class TOPEnv:
         done = (self.day_finished == 3)
         if done:
             reward = self.collected_prize
-            # print(f'visited \n {self.visited_ninf_flag} prize \n {self.collected_prize}\n\n')
+            # print(f'########selected nodes######## \n{self.selected_node_list}\n##############reward######### \n{reward}')    #for testing
         else:
             reward = None
 
@@ -286,20 +266,20 @@ class TOPEnv:
     def calculate_len_to_depot(self) :
         
         self.depot_xy_expanded = self.depot_xy.expand_as(self.node_xy)
-
+        #shape: (batch, problem, 2)
+        
         # Calculate squared differences and sum along the last dimension
         squared_diff = (self.depot_xy_expanded - self.node_xy) ** 2
-        #shape: (batch, depot, problem, 2)
+        #shape: (batch, problem, 2)
         self.distance_sums = torch.sum(squared_diff, dim=2)
-        #shape: (batch, depot, problem)
+        #shape: (batch, problem)
 
         # Square root to get the Euclidean distances
         len_to_depot = torch.sqrt(self.distance_sums)
-        #shape: (batch, depot, problem)
+        #shape: (batch, problem)
         return len_to_depot
         
     def calculate_future_len(self) : 
-
         self.node_xy_expanded = self.node_xy.unsqueeze(dim=1).expand(-1, self.problem_size, -1, -1)
         #shape: (batch, pomo, problem, 2)
         self.current_xy_expanded = self.node_xy_current.unsqueeze(dim=2).expand(-1, -1, self.problem_size, -1)
@@ -321,7 +301,6 @@ class TOPEnv:
         current_node_zero_indexed = self.current_node
         last_visited_node_zero_indexed = self.last_visited_node 
         
-        #todo 
         # Expanding the dimensions of current_node to match the dimensions of node_xy for gathering
         current_node_expanded = current_node_zero_indexed.unsqueeze(dim=2).expand(-1, -1, 2)
         #shape: (batch, problem, 2)
