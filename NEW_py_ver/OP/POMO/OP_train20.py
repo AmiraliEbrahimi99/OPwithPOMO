@@ -51,7 +51,7 @@ optimizer_params = {
         'weight_decay': 1e-6
     },
     'scheduler': {
-        'milestones': [601,],
+        'milestones': [701,],
         'gamma': 0.1
     }
 }
@@ -59,13 +59,13 @@ optimizer_params = {
 trainer_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
-    'epochs': 610 ,
+    'epochs': 710 ,
     'train_episodes': 10*1000,
     'train_batch_size': 64,
     'prev_model_path': None,
     'logging': {
-        'model_save_interval': 10,
-        'img_save_interval': 10,
+        'model_save_interval': 50,
+        'img_save_interval': 50,
         'log_image_params_1': {
             'json_foldername': 'log_image_style',
             'filename': 'style_OP_5.json'
@@ -85,7 +85,7 @@ trainer_params = {
 
 logger_params = {
     'log_file': {
-        'desc': 'train_op_n20_with_instNorm',
+        'desc': 'train_op_n20_with_instNorm_710_epoch',
         'filename': 'run_log'
     }
 }

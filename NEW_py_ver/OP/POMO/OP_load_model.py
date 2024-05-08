@@ -206,4 +206,4 @@ class OPTester:
 if __name__ == '__main__' : 
     self = OPTester(env_params=env_params, model_params=model_params, tester_params=tester_params)
     self.run(batch_size=1)
-    self.plot(batch=0,pomo=16)    
+    self.plot(batch=0,best_result= True)    
