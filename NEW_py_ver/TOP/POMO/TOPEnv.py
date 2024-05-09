@@ -85,6 +85,7 @@ class TOPEnv:
         self.saved_depot_xy = loaded_dict['depot_xy']
         self.saved_node_xy = loaded_dict['node_xy']
         self.saved_node_prize = loaded_dict['node_prize']
+        self.saved_remain_len_number = loaded_dict['remain_len']
         self.saved_index = 0    
 
     def load_problems(self, batch_size, aug_factor=1) : 
@@ -92,12 +93,15 @@ class TOPEnv:
         
         if not self.FLAG__use_saved_problems:
             depot_xy, node_xy, node_prize = get_random_problems(batch_size, self.problem_size)
+            remain_len_number = 1.5                                                                          #define remaining length
         else:
             depot_xy = self.saved_depot_xy[self.saved_index:self.saved_index+batch_size]
             node_xy = self.saved_node_xy[self.saved_index:self.saved_index+batch_size]
             node_prize = self.saved_node_prize[self.saved_index:self.saved_index+batch_size]
+            remain_len_number = self.saved_remain_len_number
             self.saved_index += batch_size
        
+        self.remain_len_number = remain_len_number
         self.depot_xy = depot_xy
         self.node_xy = node_xy
 
@@ -138,7 +142,7 @@ class TOPEnv:
         # shape: (batch, pomo)
         self.ninf_mask_first_step = torch.zeros(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
         # shape: (batch, pomo)
-        self.remaining_len = 1.5*torch.ones(size=(self.batch_size, self.pomo_size))               
+        self.remaining_len = self.remain_len_number*torch.ones(size=(self.batch_size, self.pomo_size))               
         # shape: (batch, pomo)
         self.visited_ninf_flag = torch.zeros(size=(self.batch_size, self.pomo_size, self.problem_size+1))
         # shape: (batch, pomo, problem+1)
