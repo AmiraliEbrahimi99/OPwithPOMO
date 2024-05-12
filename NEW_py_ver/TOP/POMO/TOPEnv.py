@@ -152,8 +152,9 @@ class TOPEnv:
         # shape: (batch, pomo)
         self.collected_prize = torch.zeros(size=(self.batch_size, self.pomo_size))
         # shape: (batch, pomo)
+        self.day_finished = torch.zeros(size=(self.batch_size, self.pomo_size), dtype=torch.int64)
+        #shape: (batch, pomo)
         
-        self.day_finished = 0
         reward = None
         done = False
         return self.reset_state, reward, done        
@@ -213,6 +214,14 @@ class TOPEnv:
 
         self.remaining_len -= selected_len
 
+
+        self.day_finished[self.at_the_depot] += 1
+        self.remaining_len[self.at_the_depot & (self.day_finished < 4)] = 1.5 # reset length at the depot
+
+        # self.day_finished[self.at_the_depot & ~self.ninf_mask_first_step & (self.selected_count > 1)] += 1
+        # self.day_finished[self.at_the_depot & (self.selected_count > 1)] += 1
+        # print(self.selected_node_list,self.remaining_len,self.day_finished)
+
         self.visited_ninf_flag[self.BATCH_IDX, self.POMO_IDX, selected] = float('-inf')
         # shape: (batch, pomo, problem+1)
         self.visited_ninf_flag[:, :, 0][~self.at_the_depot] = 0  # depot is considered unvisited, unless you are AT the depot
@@ -244,12 +253,11 @@ class TOPEnv:
         # do not mask depot for finished episode.
         self.ninf_mask[:, :, 0][self.finished] = 0
 
-        if self.finished.all() :
-            self.day_finished += 1
-            self.finished = False
-            self.remaining_len[:,:] = 1.5 # reset length at the depot
-            # print(f'prize {self.collected_prize}')
-            # print(f'################################### End of day = {self.day_finished} ###########################\n\n')
+        # if self.finished.all() :
+        #     self.day_finished += 1
+        #     self.finished = False
+        #     self.remaining_len[:,:] = 1.5 # reset length at the depot
+        #     print(f'################################### End of day = {self.day_finished} ###########################\n\n')
         
         self.step_state.selected_count = self.selected_count
         self.step_state.remaining_len = self.remaining_len
@@ -258,10 +266,10 @@ class TOPEnv:
         self.step_state.finished = self.finished
 
         # returning values
-        done = (self.day_finished == 3)
+        done = self.finished.all()
         if done:
             reward = self.collected_prize
-            # print(f'########selected nodes######## \n{self.selected_node_list}\n##############reward######### \n{reward}')    #for testing
+            print(f'########selected nodes######## \n{self.selected_node_list}\n##############reward######### \n{reward}')    #for testing
         else:
             reward = None
 

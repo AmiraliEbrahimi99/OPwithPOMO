@@ -11,7 +11,7 @@ from torch.optim.lr_scheduler import MultiStepLR as Scheduler
 from utils.utils import *
 
 
-class OPHSTrainer:
+class TOPTrainer:
     def __init__(self,
                  env_params,
                  model_params,
