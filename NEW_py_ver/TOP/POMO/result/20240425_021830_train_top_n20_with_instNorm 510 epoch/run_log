@@ -1,0 +1,503 @@
+[2024-05-12 14:18:06] TOP_train20.py(131) : DEBUG_MODE: False
+[2024-05-12 14:18:06] TOP_train20.py(132) : USE_CUDA: True, CUDA_DEVICE_NUM: 0
+[2024-05-12 14:18:06] TOP_train20.py(133) : env_params{'problem_size': 20, 'pomo_size': 20}
+[2024-05-12 14:18:06] TOP_train20.py(133) : model_params{'embedding_dim': 128, 'sqrt_embedding_dim': 11.313708498984761, 'encoder_layer_num': 6, 'qkv_dim': 16, 'head_num': 8, 'logit_clipping': 10, 'ff_hidden_dim': 512, 'eval_type': 'argmax'}
+[2024-05-12 14:18:06] TOP_train20.py(133) : optimizer_params{'optimizer': {'lr': 0.0001, 'weight_decay': 1e-06}, 'scheduler': {'milestones': [501], 'gamma': 0.1}}
+[2024-05-12 14:18:06] TOP_train20.py(133) : trainer_params{'use_cuda': True, 'cuda_device_num': 0, 'epochs': 510, 'train_episodes': 10000, 'train_batch_size': 64, 'prev_model_path': None, 'logging': {'model_save_interval': 20, 'img_save_interval': 20, 'log_image_params_1': {'json_foldername': 'log_image_style', 'filename': 'style_OP_5.json'}, 'log_image_params_2': {'json_foldername': 'log_image_style', 'filename': 'style_loss_1.json'}}, 'model_load': {'enable': False}}
+[2024-05-12 14:18:06] TOP_train20.py(133) : logger_params{'log_file': {'desc': 'train_TOP_n20_with_instNorm_510_epoch', 'filename': 'run_log', 'filepath': './result/20240512_174805_train_TOP_n20_with_instNorm_510_epoch'}}
+[2024-05-12 14:18:08] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:18:10] TOPTrainer.py(147) : Epoch   1: Train  64/10000(0.6%)  Score: 53.9688,  Loss: 51.5861
+[2024-05-12 14:18:10] TOPTrainer.py(147) : Epoch   1: Train 128/10000(1.3%)  Score: 59.6250,  Loss: 49.8351
+[2024-05-12 14:18:10] TOPTrainer.py(147) : Epoch   1: Train 192/10000(1.9%)  Score: 61.4115,  Loss: 50.1177
+[2024-05-12 14:18:10] TOPTrainer.py(147) : Epoch   1: Train 256/10000(2.6%)  Score: 62.2812,  Loss: 47.8963
+[2024-05-12 14:18:10] TOPTrainer.py(147) : Epoch   1: Train 320/10000(3.2%)  Score: 62.3156,  Loss: 46.2611
+[2024-05-12 14:18:10] TOPTrainer.py(147) : Epoch   1: Train 384/10000(3.8%)  Score: 62.4688,  Loss: 44.2084
+[2024-05-12 14:18:10] TOPTrainer.py(147) : Epoch   1: Train 448/10000(4.5%)  Score: 62.9308,  Loss: 41.9469
+[2024-05-12 14:18:10] TOPTrainer.py(147) : Epoch   1: Train 512/10000(5.1%)  Score: 63.1270,  Loss: 40.8515
+[2024-05-12 14:18:11] TOPTrainer.py(147) : Epoch   1: Train 576/10000(5.8%)  Score: 63.0365,  Loss: 40.0739
+[2024-05-12 14:18:11] TOPTrainer.py(147) : Epoch   1: Train 640/10000(6.4%)  Score: 63.3391,  Loss: 39.1142
+[2024-05-12 14:18:24] TOPTrainer.py(152) : Epoch   1: Train (100%)  Score: 66.5547,  Loss: 30.6127
+[2024-05-12 14:18:24] TOPTrainer.py(82) : Epoch   1/510: Time Est.: Elapsed[0.25m], Remain[2.14h]
+[2024-05-12 14:18:24] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:18:38] TOPTrainer.py(152) : Epoch   2: Train (100%)  Score: 69.1134,  Loss: 31.1874
+[2024-05-12 14:18:38] TOPTrainer.py(82) : Epoch   2/510: Time Est.: Elapsed[0.49m], Remain[2.08h]
+[2024-05-12 14:18:38] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:18:38] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:18:54] TOPTrainer.py(152) : Epoch   3: Train (100%)  Score: 69.0238,  Loss: 31.3081
+[2024-05-12 14:18:54] TOPTrainer.py(82) : Epoch   3/510: Time Est.: Elapsed[0.75m], Remain[2.12h]
+[2024-05-12 14:18:54] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:18:54] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:19:10] TOPTrainer.py(152) : Epoch   4: Train (100%)  Score: 69.5824,  Loss: 31.1061
+[2024-05-12 14:19:10] TOPTrainer.py(82) : Epoch   4/510: Time Est.: Elapsed[1.03m], Remain[2.17h]
+[2024-05-12 14:19:10] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:19:10] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:19:26] TOPTrainer.py(152) : Epoch   5: Train (100%)  Score: 69.5249,  Loss: 30.8858
+[2024-05-12 14:19:26] TOPTrainer.py(82) : Epoch   5/510: Time Est.: Elapsed[1.29m], Remain[2.17h]
+[2024-05-12 14:19:26] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:19:26] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:19:42] TOPTrainer.py(152) : Epoch   6: Train (100%)  Score: 69.8309,  Loss: 30.4643
+[2024-05-12 14:19:42] TOPTrainer.py(82) : Epoch   6/510: Time Est.: Elapsed[1.55m], Remain[2.18h]
+[2024-05-12 14:19:42] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:19:42] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:19:58] TOPTrainer.py(152) : Epoch   7: Train (100%)  Score: 69.8275,  Loss: 30.2289
+[2024-05-12 14:19:58] TOPTrainer.py(82) : Epoch   7/510: Time Est.: Elapsed[1.82m], Remain[2.18h]
+[2024-05-12 14:19:58] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:19:58] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:20:13] TOPTrainer.py(152) : Epoch   8: Train (100%)  Score: 69.8743,  Loss: 29.9909
+[2024-05-12 14:20:13] TOPTrainer.py(82) : Epoch   8/510: Time Est.: Elapsed[2.08m], Remain[2.18h]
+[2024-05-12 14:20:13] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:20:13] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:20:29] TOPTrainer.py(152) : Epoch   9: Train (100%)  Score: 70.1956,  Loss: 30.0132
+[2024-05-12 14:20:29] TOPTrainer.py(82) : Epoch   9/510: Time Est.: Elapsed[2.34m], Remain[2.17h]
+[2024-05-12 14:20:29] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:20:29] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:20:44] TOPTrainer.py(152) : Epoch  10: Train (100%)  Score: 69.8948,  Loss: 30.5156
+[2024-05-12 14:20:44] TOPTrainer.py(82) : Epoch  10/510: Time Est.: Elapsed[2.60m], Remain[2.17h]
+[2024-05-12 14:20:44] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:20:45] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:21:00] TOPTrainer.py(152) : Epoch  11: Train (100%)  Score: 69.9464,  Loss: 29.9631
+[2024-05-12 14:21:00] TOPTrainer.py(82) : Epoch  11/510: Time Est.: Elapsed[2.86m], Remain[2.16h]
+[2024-05-12 14:21:00] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:21:00] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:21:17] TOPTrainer.py(152) : Epoch  12: Train (100%)  Score: 69.9206,  Loss: 29.0178
+[2024-05-12 14:21:17] TOPTrainer.py(82) : Epoch  12/510: Time Est.: Elapsed[3.14m], Remain[2.17h]
+[2024-05-12 14:21:17] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:21:17] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:21:32] TOPTrainer.py(152) : Epoch  13: Train (100%)  Score: 70.0638,  Loss: 28.5195
+[2024-05-12 14:21:32] TOPTrainer.py(82) : Epoch  13/510: Time Est.: Elapsed[3.39m], Remain[2.16h]
+[2024-05-12 14:21:32] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:21:32] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:21:48] TOPTrainer.py(152) : Epoch  14: Train (100%)  Score: 70.5460,  Loss: 28.0391
+[2024-05-12 14:21:48] TOPTrainer.py(82) : Epoch  14/510: Time Est.: Elapsed[3.66m], Remain[2.16h]
+[2024-05-12 14:21:48] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:21:48] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:22:03] TOPTrainer.py(152) : Epoch  15: Train (100%)  Score: 70.2923,  Loss: 27.9802
+[2024-05-12 14:22:03] TOPTrainer.py(82) : Epoch  15/510: Time Est.: Elapsed[3.91m], Remain[2.15h]
+[2024-05-12 14:22:03] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:22:03] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:22:19] TOPTrainer.py(152) : Epoch  16: Train (100%)  Score: 70.7350,  Loss: 27.1463
+[2024-05-12 14:22:19] TOPTrainer.py(82) : Epoch  16/510: Time Est.: Elapsed[4.18m], Remain[2.15h]
+[2024-05-12 14:22:19] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:22:19] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:22:36] TOPTrainer.py(152) : Epoch  17: Train (100%)  Score: 70.5788,  Loss: 26.5195
+[2024-05-12 14:22:36] TOPTrainer.py(82) : Epoch  17/510: Time Est.: Elapsed[4.46m], Remain[2.15h]
+[2024-05-12 14:22:36] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:22:36] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:22:52] TOPTrainer.py(152) : Epoch  18: Train (100%)  Score: 70.3012,  Loss: 26.1973
+[2024-05-12 14:22:52] TOPTrainer.py(82) : Epoch  18/510: Time Est.: Elapsed[4.72m], Remain[2.15h]
+[2024-05-12 14:22:52] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:22:52] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:23:07] TOPTrainer.py(152) : Epoch  19: Train (100%)  Score: 70.7534,  Loss: 26.4705
+[2024-05-12 14:23:07] TOPTrainer.py(82) : Epoch  19/510: Time Est.: Elapsed[4.98m], Remain[2.15h]
+[2024-05-12 14:23:07] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:23:08] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:23:24] TOPTrainer.py(152) : Epoch  20: Train (100%)  Score: 70.8423,  Loss: 26.1662
+[2024-05-12 14:23:24] TOPTrainer.py(82) : Epoch  20/510: Time Est.: Elapsed[5.27m], Remain[2.15h]
+[2024-05-12 14:23:24] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:23:25] TOPTrainer.py(100) : Saving trained_model
+[2024-05-12 14:23:25] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:23:41] TOPTrainer.py(152) : Epoch  21: Train (100%)  Score: 70.8553,  Loss: 26.5705
+[2024-05-12 14:23:41] TOPTrainer.py(82) : Epoch  21/510: Time Est.: Elapsed[5.53m], Remain[2.15h]
+[2024-05-12 14:23:41] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:23:41] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:23:57] TOPTrainer.py(152) : Epoch  22: Train (100%)  Score: 70.7233,  Loss: 25.6628
+[2024-05-12 14:23:57] TOPTrainer.py(82) : Epoch  22/510: Time Est.: Elapsed[5.81m], Remain[2.15h]
+[2024-05-12 14:23:57] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:23:57] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:24:13] TOPTrainer.py(152) : Epoch  23: Train (100%)  Score: 70.7129,  Loss: 26.0473
+[2024-05-12 14:24:13] TOPTrainer.py(82) : Epoch  23/510: Time Est.: Elapsed[6.08m], Remain[2.14h]
+[2024-05-12 14:24:13] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:24:13] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:24:29] TOPTrainer.py(152) : Epoch  24: Train (100%)  Score: 70.6208,  Loss: 26.2817
+[2024-05-12 14:24:29] TOPTrainer.py(82) : Epoch  24/510: Time Est.: Elapsed[6.34m], Remain[2.14h]
+[2024-05-12 14:24:29] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:24:29] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:24:45] TOPTrainer.py(152) : Epoch  25: Train (100%)  Score: 70.7515,  Loss: 26.4792
+[2024-05-12 14:24:45] TOPTrainer.py(82) : Epoch  25/510: Time Est.: Elapsed[6.60m], Remain[2.14h]
+[2024-05-12 14:24:45] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:24:45] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:25:01] TOPTrainer.py(152) : Epoch  26: Train (100%)  Score: 70.7645,  Loss: 25.7168
+[2024-05-12 14:25:01] TOPTrainer.py(82) : Epoch  26/510: Time Est.: Elapsed[6.87m], Remain[2.13h]
+[2024-05-12 14:25:01] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:25:01] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:25:17] TOPTrainer.py(152) : Epoch  27: Train (100%)  Score: 70.6987,  Loss: 25.4982
+[2024-05-12 14:25:17] TOPTrainer.py(82) : Epoch  27/510: Time Est.: Elapsed[7.15m], Remain[2.13h]
+[2024-05-12 14:25:17] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:25:18] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:25:33] TOPTrainer.py(152) : Epoch  28: Train (100%)  Score: 70.6878,  Loss: 25.9654
+[2024-05-12 14:25:33] TOPTrainer.py(82) : Epoch  28/510: Time Est.: Elapsed[7.41m], Remain[2.13h]
+[2024-05-12 14:25:33] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:25:33] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:25:49] TOPTrainer.py(152) : Epoch  29: Train (100%)  Score: 70.9736,  Loss: 25.2161
+[2024-05-12 14:25:49] TOPTrainer.py(82) : Epoch  29/510: Time Est.: Elapsed[7.68m], Remain[2.12h]
+[2024-05-12 14:25:49] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:25:49] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:26:05] TOPTrainer.py(152) : Epoch  30: Train (100%)  Score: 70.8243,  Loss: 24.9601
+[2024-05-12 14:26:05] TOPTrainer.py(82) : Epoch  30/510: Time Est.: Elapsed[7.94m], Remain[2.12h]
+[2024-05-12 14:26:05] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:26:05] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:26:21] TOPTrainer.py(152) : Epoch  31: Train (100%)  Score: 70.9265,  Loss: 25.0122
+[2024-05-12 14:26:21] TOPTrainer.py(82) : Epoch  31/510: Time Est.: Elapsed[8.21m], Remain[2.11h]
+[2024-05-12 14:26:21] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:26:21] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:26:38] TOPTrainer.py(152) : Epoch  32: Train (100%)  Score: 70.4140,  Loss: 24.3015
+[2024-05-12 14:26:38] TOPTrainer.py(82) : Epoch  32/510: Time Est.: Elapsed[8.49m], Remain[2.11h]
+[2024-05-12 14:26:38] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:26:38] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:26:54] TOPTrainer.py(152) : Epoch  33: Train (100%)  Score: 71.2315,  Loss: 24.1442
+[2024-05-12 14:26:54] TOPTrainer.py(82) : Epoch  33/510: Time Est.: Elapsed[8.75m], Remain[2.11h]
+[2024-05-12 14:26:54] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:26:54] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:27:10] TOPTrainer.py(152) : Epoch  34: Train (100%)  Score: 70.6352,  Loss: 23.8531
+[2024-05-12 14:27:10] TOPTrainer.py(82) : Epoch  34/510: Time Est.: Elapsed[9.02m], Remain[2.10h]
+[2024-05-12 14:27:10] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:27:10] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:27:26] TOPTrainer.py(152) : Epoch  35: Train (100%)  Score: 70.8996,  Loss: 24.7398
+[2024-05-12 14:27:26] TOPTrainer.py(82) : Epoch  35/510: Time Est.: Elapsed[9.29m], Remain[2.10h]
+[2024-05-12 14:27:26] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:27:26] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:27:43] TOPTrainer.py(152) : Epoch  36: Train (100%)  Score: 70.7477,  Loss: 24.1038
+[2024-05-12 14:27:43] TOPTrainer.py(82) : Epoch  36/510: Time Est.: Elapsed[9.57m], Remain[2.10h]
+[2024-05-12 14:27:43] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:27:43] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:27:59] TOPTrainer.py(152) : Epoch  37: Train (100%)  Score: 70.8191,  Loss: 23.7882
+[2024-05-12 14:27:59] TOPTrainer.py(82) : Epoch  37/510: Time Est.: Elapsed[9.85m], Remain[2.10h]
+[2024-05-12 14:27:59] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:28:00] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:28:15] TOPTrainer.py(152) : Epoch  38: Train (100%)  Score: 71.1178,  Loss: 23.4246
+[2024-05-12 14:28:15] TOPTrainer.py(82) : Epoch  38/510: Time Est.: Elapsed[10.11m], Remain[2.09h]
+[2024-05-12 14:28:15] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:28:16] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:28:31] TOPTrainer.py(152) : Epoch  39: Train (100%)  Score: 70.8924,  Loss: 23.6594
+[2024-05-12 14:28:31] TOPTrainer.py(82) : Epoch  39/510: Time Est.: Elapsed[10.38m], Remain[2.09h]
+[2024-05-12 14:28:31] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:28:32] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:28:47] TOPTrainer.py(152) : Epoch  40: Train (100%)  Score: 71.1769,  Loss: 23.0217
+[2024-05-12 14:28:47] TOPTrainer.py(82) : Epoch  40/510: Time Est.: Elapsed[10.65m], Remain[2.09h]
+[2024-05-12 14:28:47] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:28:47] TOPTrainer.py(100) : Saving trained_model
+[2024-05-12 14:28:48] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:29:05] TOPTrainer.py(152) : Epoch  41: Train (100%)  Score: 70.8535,  Loss: 23.6648
+[2024-05-12 14:29:05] TOPTrainer.py(82) : Epoch  41/510: Time Est.: Elapsed[10.94m], Remain[2.09h]
+[2024-05-12 14:29:05] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:29:05] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:29:21] TOPTrainer.py(152) : Epoch  42: Train (100%)  Score: 70.8552,  Loss: 23.0389
+[2024-05-12 14:29:21] TOPTrainer.py(82) : Epoch  42/510: Time Est.: Elapsed[11.20m], Remain[2.08h]
+[2024-05-12 14:29:21] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:29:21] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:29:37] TOPTrainer.py(152) : Epoch  43: Train (100%)  Score: 71.1264,  Loss: 22.3380
+[2024-05-12 14:29:37] TOPTrainer.py(82) : Epoch  43/510: Time Est.: Elapsed[11.47m], Remain[2.08h]
+[2024-05-12 14:29:37] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:29:37] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:29:52] TOPTrainer.py(152) : Epoch  44: Train (100%)  Score: 71.0707,  Loss: 22.9979
+[2024-05-12 14:29:52] TOPTrainer.py(82) : Epoch  44/510: Time Est.: Elapsed[11.73m], Remain[2.07h]
+[2024-05-12 14:29:52] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:29:53] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:30:08] TOPTrainer.py(152) : Epoch  45: Train (100%)  Score: 70.8769,  Loss: 21.9868
+[2024-05-12 14:30:08] TOPTrainer.py(82) : Epoch  45/510: Time Est.: Elapsed[12.00m], Remain[2.07h]
+[2024-05-12 14:30:08] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:30:09] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:30:25] TOPTrainer.py(152) : Epoch  46: Train (100%)  Score: 71.0833,  Loss: 22.8881
+[2024-05-12 14:30:25] TOPTrainer.py(82) : Epoch  46/510: Time Est.: Elapsed[12.28m], Remain[2.06h]
+[2024-05-12 14:30:25] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:30:26] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:30:41] TOPTrainer.py(152) : Epoch  47: Train (100%)  Score: 71.1049,  Loss: 23.3953
+[2024-05-12 14:30:41] TOPTrainer.py(82) : Epoch  47/510: Time Est.: Elapsed[12.55m], Remain[2.06h]
+[2024-05-12 14:30:41] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:30:41] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:30:57] TOPTrainer.py(152) : Epoch  48: Train (100%)  Score: 71.1299,  Loss: 21.7992
+[2024-05-12 14:30:57] TOPTrainer.py(82) : Epoch  48/510: Time Est.: Elapsed[12.81m], Remain[2.06h]
+[2024-05-12 14:30:57] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:30:57] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:31:13] TOPTrainer.py(152) : Epoch  49: Train (100%)  Score: 71.1660,  Loss: 21.6614
+[2024-05-12 14:31:13] TOPTrainer.py(82) : Epoch  49/510: Time Est.: Elapsed[13.08m], Remain[2.05h]
+[2024-05-12 14:31:13] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:31:13] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:31:29] TOPTrainer.py(152) : Epoch  50: Train (100%)  Score: 71.2388,  Loss: 22.4664
+[2024-05-12 14:31:29] TOPTrainer.py(82) : Epoch  50/510: Time Est.: Elapsed[13.35m], Remain[2.05h]
+[2024-05-12 14:31:29] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:31:30] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:31:47] TOPTrainer.py(152) : Epoch  51: Train (100%)  Score: 71.2844,  Loss: 22.0404
+[2024-05-12 14:31:47] TOPTrainer.py(82) : Epoch  51/510: Time Est.: Elapsed[13.64m], Remain[2.05h]
+[2024-05-12 14:31:47] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:31:47] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:32:03] TOPTrainer.py(152) : Epoch  52: Train (100%)  Score: 71.0050,  Loss: 22.1016
+[2024-05-12 14:32:03] TOPTrainer.py(82) : Epoch  52/510: Time Est.: Elapsed[13.91m], Remain[2.04h]
+[2024-05-12 14:32:03] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:32:03] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:32:19] TOPTrainer.py(152) : Epoch  53: Train (100%)  Score: 70.9907,  Loss: 21.0792
+[2024-05-12 14:32:19] TOPTrainer.py(82) : Epoch  53/510: Time Est.: Elapsed[14.18m], Remain[2.04h]
+[2024-05-12 14:32:19] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:32:19] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:32:35] TOPTrainer.py(152) : Epoch  54: Train (100%)  Score: 71.0880,  Loss: 21.8194
+[2024-05-12 14:32:35] TOPTrainer.py(82) : Epoch  54/510: Time Est.: Elapsed[14.44m], Remain[2.03h]
+[2024-05-12 14:32:35] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:32:35] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:32:52] TOPTrainer.py(152) : Epoch  55: Train (100%)  Score: 70.9419,  Loss: 20.5259
+[2024-05-12 14:32:52] TOPTrainer.py(82) : Epoch  55/510: Time Est.: Elapsed[14.72m], Remain[2.03h]
+[2024-05-12 14:32:52] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:32:52] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:33:08] TOPTrainer.py(152) : Epoch  56: Train (100%)  Score: 71.0863,  Loss: 20.4279
+[2024-05-12 14:33:08] TOPTrainer.py(82) : Epoch  56/510: Time Est.: Elapsed[14.99m], Remain[2.03h]
+[2024-05-12 14:33:08] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:33:08] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:33:24] TOPTrainer.py(152) : Epoch  57: Train (100%)  Score: 70.9404,  Loss: 19.4470
+[2024-05-12 14:33:24] TOPTrainer.py(82) : Epoch  57/510: Time Est.: Elapsed[15.25m], Remain[2.02h]
+[2024-05-12 14:33:24] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:33:24] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:33:40] TOPTrainer.py(152) : Epoch  58: Train (100%)  Score: 71.1194,  Loss: 19.3552
+[2024-05-12 14:33:40] TOPTrainer.py(82) : Epoch  58/510: Time Est.: Elapsed[15.52m], Remain[2.02h]
+[2024-05-12 14:33:40] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:33:40] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:33:56] TOPTrainer.py(152) : Epoch  59: Train (100%)  Score: 71.1489,  Loss: 19.4092
+[2024-05-12 14:33:56] TOPTrainer.py(82) : Epoch  59/510: Time Est.: Elapsed[15.80m], Remain[2.01h]
+[2024-05-12 14:33:56] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:33:57] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:34:13] TOPTrainer.py(152) : Epoch  60: Train (100%)  Score: 71.3446,  Loss: 19.6111
+[2024-05-12 14:34:13] TOPTrainer.py(82) : Epoch  60/510: Time Est.: Elapsed[16.08m], Remain[2.01h]
+[2024-05-12 14:34:13] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:34:13] TOPTrainer.py(100) : Saving trained_model
+[2024-05-12 14:34:13] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:34:29] TOPTrainer.py(152) : Epoch  61: Train (100%)  Score: 71.1615,  Loss: 19.3244
+[2024-05-12 14:34:29] TOPTrainer.py(82) : Epoch  61/510: Time Est.: Elapsed[16.35m], Remain[2.01h]
+[2024-05-12 14:34:29] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:34:30] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:34:46] TOPTrainer.py(152) : Epoch  62: Train (100%)  Score: 71.1115,  Loss: 18.9696
+[2024-05-12 14:34:46] TOPTrainer.py(82) : Epoch  62/510: Time Est.: Elapsed[16.62m], Remain[2.00h]
+[2024-05-12 14:34:46] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:34:46] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:35:02] TOPTrainer.py(152) : Epoch  63: Train (100%)  Score: 70.8980,  Loss: 18.8637
+[2024-05-12 14:35:02] TOPTrainer.py(82) : Epoch  63/510: Time Est.: Elapsed[16.89m], Remain[2.00h]
+[2024-05-12 14:35:02] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:35:02] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:35:19] TOPTrainer.py(152) : Epoch  64: Train (100%)  Score: 70.8511,  Loss: 19.3626
+[2024-05-12 14:35:19] TOPTrainer.py(82) : Epoch  64/510: Time Est.: Elapsed[17.17m], Remain[1.99h]
+[2024-05-12 14:35:19] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:35:19] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:35:35] TOPTrainer.py(152) : Epoch  65: Train (100%)  Score: 71.1601,  Loss: 18.3482
+[2024-05-12 14:35:35] TOPTrainer.py(82) : Epoch  65/510: Time Est.: Elapsed[17.44m], Remain[1.99h]
+[2024-05-12 14:35:35] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:35:35] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:35:51] TOPTrainer.py(152) : Epoch  66: Train (100%)  Score: 71.3569,  Loss: 18.2849
+[2024-05-12 14:35:51] TOPTrainer.py(82) : Epoch  66/510: Time Est.: Elapsed[17.70m], Remain[1.98h]
+[2024-05-12 14:35:51] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:35:51] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:36:08] TOPTrainer.py(152) : Epoch  67: Train (100%)  Score: 71.0656,  Loss: 18.2687
+[2024-05-12 14:36:08] TOPTrainer.py(82) : Epoch  67/510: Time Est.: Elapsed[17.99m], Remain[1.98h]
+[2024-05-12 14:36:08] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:36:08] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:36:25] TOPTrainer.py(152) : Epoch  68: Train (100%)  Score: 71.0978,  Loss: 18.0486
+[2024-05-12 14:36:25] TOPTrainer.py(82) : Epoch  68/510: Time Est.: Elapsed[18.27m], Remain[1.98h]
+[2024-05-12 14:36:25] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:36:25] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:36:40] TOPTrainer.py(152) : Epoch  69: Train (100%)  Score: 71.0514,  Loss: 17.9363
+[2024-05-12 14:36:40] TOPTrainer.py(82) : Epoch  69/510: Time Est.: Elapsed[18.53m], Remain[1.97h]
+[2024-05-12 14:36:40] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:36:41] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:36:57] TOPTrainer.py(152) : Epoch  70: Train (100%)  Score: 71.1067,  Loss: 17.8885
+[2024-05-12 14:36:57] TOPTrainer.py(82) : Epoch  70/510: Time Est.: Elapsed[18.80m], Remain[1.97h]
+[2024-05-12 14:36:57] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:36:57] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:37:13] TOPTrainer.py(152) : Epoch  71: Train (100%)  Score: 71.0236,  Loss: 17.7674
+[2024-05-12 14:37:13] TOPTrainer.py(82) : Epoch  71/510: Time Est.: Elapsed[19.07m], Remain[1.97h]
+[2024-05-12 14:37:13] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:37:13] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:37:29] TOPTrainer.py(152) : Epoch  72: Train (100%)  Score: 71.1051,  Loss: 17.7789
+[2024-05-12 14:37:29] TOPTrainer.py(82) : Epoch  72/510: Time Est.: Elapsed[19.35m], Remain[1.96h]
+[2024-05-12 14:37:29] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:37:30] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:37:46] TOPTrainer.py(152) : Epoch  73: Train (100%)  Score: 71.0242,  Loss: 17.5271
+[2024-05-12 14:37:46] TOPTrainer.py(82) : Epoch  73/510: Time Est.: Elapsed[19.62m], Remain[1.96h]
+[2024-05-12 14:37:46] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:37:46] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:38:02] TOPTrainer.py(152) : Epoch  74: Train (100%)  Score: 71.1999,  Loss: 17.2419
+[2024-05-12 14:38:02] TOPTrainer.py(82) : Epoch  74/510: Time Est.: Elapsed[19.89m], Remain[1.95h]
+[2024-05-12 14:38:02] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:38:02] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:38:18] TOPTrainer.py(152) : Epoch  75: Train (100%)  Score: 71.3000,  Loss: 17.2275
+[2024-05-12 14:38:18] TOPTrainer.py(82) : Epoch  75/510: Time Est.: Elapsed[20.16m], Remain[1.95h]
+[2024-05-12 14:38:18] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:38:18] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:38:34] TOPTrainer.py(152) : Epoch  76: Train (100%)  Score: 71.1808,  Loss: 17.4105
+[2024-05-12 14:38:34] TOPTrainer.py(82) : Epoch  76/510: Time Est.: Elapsed[20.43m], Remain[1.94h]
+[2024-05-12 14:38:34] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:38:35] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:38:51] TOPTrainer.py(152) : Epoch  77: Train (100%)  Score: 70.9424,  Loss: 15.9133
+[2024-05-12 14:38:51] TOPTrainer.py(82) : Epoch  77/510: Time Est.: Elapsed[20.71m], Remain[1.94h]
+[2024-05-12 14:38:51] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:38:51] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:39:07] TOPTrainer.py(152) : Epoch  78: Train (100%)  Score: 71.2746,  Loss: 16.3677
+[2024-05-12 14:39:07] TOPTrainer.py(82) : Epoch  78/510: Time Est.: Elapsed[20.98m], Remain[1.94h]
+[2024-05-12 14:39:07] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:39:08] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:39:23] TOPTrainer.py(152) : Epoch  79: Train (100%)  Score: 71.0207,  Loss: 16.9303
+[2024-05-12 14:39:23] TOPTrainer.py(82) : Epoch  79/510: Time Est.: Elapsed[21.25m], Remain[1.93h]
+[2024-05-12 14:39:23] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:39:24] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:39:39] TOPTrainer.py(152) : Epoch  80: Train (100%)  Score: 71.1958,  Loss: 16.1144
+[2024-05-12 14:39:39] TOPTrainer.py(82) : Epoch  80/510: Time Est.: Elapsed[21.52m], Remain[1.93h]
+[2024-05-12 14:39:39] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:39:40] TOPTrainer.py(100) : Saving trained_model
+[2024-05-12 14:39:40] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:39:57] TOPTrainer.py(152) : Epoch  81: Train (100%)  Score: 71.1227,  Loss: 16.1506
+[2024-05-12 14:39:57] TOPTrainer.py(82) : Epoch  81/510: Time Est.: Elapsed[21.80m], Remain[1.92h]
+[2024-05-12 14:39:57] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:39:57] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:40:13] TOPTrainer.py(152) : Epoch  82: Train (100%)  Score: 71.1822,  Loss: 16.6926
+[2024-05-12 14:40:13] TOPTrainer.py(82) : Epoch  82/510: Time Est.: Elapsed[22.08m], Remain[1.92h]
+[2024-05-12 14:40:13] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:40:13] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:40:30] TOPTrainer.py(152) : Epoch  83: Train (100%)  Score: 71.1215,  Loss: 16.2868
+[2024-05-12 14:40:30] TOPTrainer.py(82) : Epoch  83/510: Time Est.: Elapsed[22.36m], Remain[1.92h]
+[2024-05-12 14:40:30] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:40:30] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:40:46] TOPTrainer.py(152) : Epoch  84: Train (100%)  Score: 71.2665,  Loss: 15.6598
+[2024-05-12 14:40:46] TOPTrainer.py(82) : Epoch  84/510: Time Est.: Elapsed[22.63m], Remain[1.91h]
+[2024-05-12 14:40:46] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:40:46] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:41:03] TOPTrainer.py(152) : Epoch  85: Train (100%)  Score: 71.0833,  Loss: 16.3757
+[2024-05-12 14:41:03] TOPTrainer.py(82) : Epoch  85/510: Time Est.: Elapsed[22.90m], Remain[1.91h]
+[2024-05-12 14:41:03] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:41:03] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:41:19] TOPTrainer.py(152) : Epoch  86: Train (100%)  Score: 71.0421,  Loss: 16.4255
+[2024-05-12 14:41:19] TOPTrainer.py(82) : Epoch  86/510: Time Est.: Elapsed[23.17m], Remain[1.90h]
+[2024-05-12 14:41:19] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:41:19] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:41:35] TOPTrainer.py(152) : Epoch  87: Train (100%)  Score: 71.3336,  Loss: 16.2032
+[2024-05-12 14:41:35] TOPTrainer.py(82) : Epoch  87/510: Time Est.: Elapsed[23.44m], Remain[1.90h]
+[2024-05-12 14:41:35] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:41:35] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:41:51] TOPTrainer.py(152) : Epoch  88: Train (100%)  Score: 70.9943,  Loss: 16.2324
+[2024-05-12 14:41:51] TOPTrainer.py(82) : Epoch  88/510: Time Est.: Elapsed[23.71m], Remain[1.89h]
+[2024-05-12 14:41:51] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:41:51] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:42:07] TOPTrainer.py(152) : Epoch  89: Train (100%)  Score: 71.2630,  Loss: 15.9803
+[2024-05-12 14:42:07] TOPTrainer.py(82) : Epoch  89/510: Time Est.: Elapsed[23.98m], Remain[1.89h]
+[2024-05-12 14:42:07] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:42:07] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:42:24] TOPTrainer.py(152) : Epoch  90: Train (100%)  Score: 71.3984,  Loss: 15.4255
+[2024-05-12 14:42:24] TOPTrainer.py(82) : Epoch  90/510: Time Est.: Elapsed[24.26m], Remain[1.89h]
+[2024-05-12 14:42:24] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:42:24] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:42:40] TOPTrainer.py(152) : Epoch  91: Train (100%)  Score: 70.8954,  Loss: 15.7807
+[2024-05-12 14:42:40] TOPTrainer.py(82) : Epoch  91/510: Time Est.: Elapsed[24.53m], Remain[1.88h]
+[2024-05-12 14:42:40] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:42:40] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:42:56] TOPTrainer.py(152) : Epoch  92: Train (100%)  Score: 71.5408,  Loss: 15.3827
+[2024-05-12 14:42:56] TOPTrainer.py(82) : Epoch  92/510: Time Est.: Elapsed[24.80m], Remain[1.88h]
+[2024-05-12 14:42:56] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:42:56] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:43:12] TOPTrainer.py(152) : Epoch  93: Train (100%)  Score: 71.2461,  Loss: 15.5348
+[2024-05-12 14:43:12] TOPTrainer.py(82) : Epoch  93/510: Time Est.: Elapsed[25.06m], Remain[1.87h]
+[2024-05-12 14:43:12] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:43:12] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:43:29] TOPTrainer.py(152) : Epoch  94: Train (100%)  Score: 71.2328,  Loss: 16.3007
+[2024-05-12 14:43:29] TOPTrainer.py(82) : Epoch  94/510: Time Est.: Elapsed[25.34m], Remain[1.87h]
+[2024-05-12 14:43:29] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:43:29] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:43:45] TOPTrainer.py(152) : Epoch  95: Train (100%)  Score: 71.4304,  Loss: 15.9372
+[2024-05-12 14:43:45] TOPTrainer.py(82) : Epoch  95/510: Time Est.: Elapsed[25.61m], Remain[1.86h]
+[2024-05-12 14:43:45] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:43:45] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:44:01] TOPTrainer.py(152) : Epoch  96: Train (100%)  Score: 71.2292,  Loss: 15.8318
+[2024-05-12 14:44:01] TOPTrainer.py(82) : Epoch  96/510: Time Est.: Elapsed[25.88m], Remain[1.86h]
+[2024-05-12 14:44:01] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:44:01] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:44:17] TOPTrainer.py(152) : Epoch  97: Train (100%)  Score: 71.0426,  Loss: 15.5701
+[2024-05-12 14:44:17] TOPTrainer.py(82) : Epoch  97/510: Time Est.: Elapsed[26.15m], Remain[1.86h]
+[2024-05-12 14:44:17] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:44:17] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:44:33] TOPTrainer.py(152) : Epoch  98: Train (100%)  Score: 71.2193,  Loss: 15.7548
+[2024-05-12 14:44:33] TOPTrainer.py(82) : Epoch  98/510: Time Est.: Elapsed[26.42m], Remain[1.85h]
+[2024-05-12 14:44:33] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:44:34] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:44:51] TOPTrainer.py(152) : Epoch  99: Train (100%)  Score: 71.1832,  Loss: 15.2273
+[2024-05-12 14:44:51] TOPTrainer.py(82) : Epoch  99/510: Time Est.: Elapsed[26.71m], Remain[1.85h]
+[2024-05-12 14:44:51] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:44:51] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:45:07] TOPTrainer.py(152) : Epoch 100: Train (100%)  Score: 71.2258,  Loss: 14.9213
+[2024-05-12 14:45:07] TOPTrainer.py(82) : Epoch 100/510: Time Est.: Elapsed[26.98m], Remain[1.84h]
+[2024-05-12 14:45:07] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:45:07] TOPTrainer.py(100) : Saving trained_model
+[2024-05-12 14:45:07] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:45:23] TOPTrainer.py(152) : Epoch 101: Train (100%)  Score: 71.3328,  Loss: 15.5963
+[2024-05-12 14:45:23] TOPTrainer.py(82) : Epoch 101/510: Time Est.: Elapsed[27.25m], Remain[1.84h]
+[2024-05-12 14:45:23] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:45:23] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:45:40] TOPTrainer.py(152) : Epoch 102: Train (100%)  Score: 71.0361,  Loss: 15.5580
+[2024-05-12 14:45:40] TOPTrainer.py(82) : Epoch 102/510: Time Est.: Elapsed[27.52m], Remain[1.83h]
+[2024-05-12 14:45:40] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:45:40] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:45:56] TOPTrainer.py(152) : Epoch 103: Train (100%)  Score: 71.0713,  Loss: 14.8335
+[2024-05-12 14:45:56] TOPTrainer.py(82) : Epoch 103/510: Time Est.: Elapsed[27.79m], Remain[1.83h]
+[2024-05-12 14:45:56] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:45:56] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:46:12] TOPTrainer.py(152) : Epoch 104: Train (100%)  Score: 71.1745,  Loss: 14.5096
+[2024-05-12 14:46:12] TOPTrainer.py(82) : Epoch 104/510: Time Est.: Elapsed[28.06m], Remain[1.83h]
+[2024-05-12 14:46:12] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:46:12] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:46:28] TOPTrainer.py(152) : Epoch 105: Train (100%)  Score: 71.4336,  Loss: 14.9305
+[2024-05-12 14:46:28] TOPTrainer.py(82) : Epoch 105/510: Time Est.: Elapsed[28.33m], Remain[1.82h]
+[2024-05-12 14:46:28] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:46:28] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:46:44] TOPTrainer.py(152) : Epoch 106: Train (100%)  Score: 71.0717,  Loss: 14.2250
+[2024-05-12 14:46:44] TOPTrainer.py(82) : Epoch 106/510: Time Est.: Elapsed[28.59m], Remain[1.82h]
+[2024-05-12 14:46:44] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:46:44] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:47:00] TOPTrainer.py(152) : Epoch 107: Train (100%)  Score: 71.5903,  Loss: 14.8921
+[2024-05-12 14:47:00] TOPTrainer.py(82) : Epoch 107/510: Time Est.: Elapsed[28.87m], Remain[1.81h]
+[2024-05-12 14:47:00] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:47:01] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:47:17] TOPTrainer.py(152) : Epoch 108: Train (100%)  Score: 71.3339,  Loss: 14.3372
+[2024-05-12 14:47:17] TOPTrainer.py(82) : Epoch 108/510: Time Est.: Elapsed[29.14m], Remain[1.81h]
+[2024-05-12 14:47:17] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:47:17] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:47:33] TOPTrainer.py(152) : Epoch 109: Train (100%)  Score: 71.1138,  Loss: 14.8087
+[2024-05-12 14:47:33] TOPTrainer.py(82) : Epoch 109/510: Time Est.: Elapsed[29.41m], Remain[1.80h]
+[2024-05-12 14:47:33] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:47:33] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:47:49] TOPTrainer.py(152) : Epoch 110: Train (100%)  Score: 71.2057,  Loss: 14.4391
+[2024-05-12 14:47:49] TOPTrainer.py(82) : Epoch 110/510: Time Est.: Elapsed[29.68m], Remain[1.80h]
+[2024-05-12 14:47:49] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:47:49] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:48:06] TOPTrainer.py(152) : Epoch 111: Train (100%)  Score: 71.3195,  Loss: 14.8154
+[2024-05-12 14:48:06] TOPTrainer.py(82) : Epoch 111/510: Time Est.: Elapsed[29.95m], Remain[1.79h]
+[2024-05-12 14:48:06] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:48:06] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:48:22] TOPTrainer.py(152) : Epoch 112: Train (100%)  Score: 71.2306,  Loss: 14.7071
+[2024-05-12 14:48:22] TOPTrainer.py(82) : Epoch 112/510: Time Est.: Elapsed[30.23m], Remain[1.79h]
+[2024-05-12 14:48:22] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:48:23] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:48:38] TOPTrainer.py(152) : Epoch 113: Train (100%)  Score: 71.0800,  Loss: 14.2853
+[2024-05-12 14:48:38] TOPTrainer.py(82) : Epoch 113/510: Time Est.: Elapsed[30.50m], Remain[1.79h]
+[2024-05-12 14:48:38] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:48:39] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:48:54] TOPTrainer.py(152) : Epoch 114: Train (100%)  Score: 71.3665,  Loss: 14.7456
+[2024-05-12 14:48:54] TOPTrainer.py(82) : Epoch 114/510: Time Est.: Elapsed[30.77m], Remain[1.78h]
+[2024-05-12 14:48:54] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:48:55] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:49:12] TOPTrainer.py(152) : Epoch 115: Train (100%)  Score: 71.4316,  Loss: 14.7167
+[2024-05-12 14:49:12] TOPTrainer.py(82) : Epoch 115/510: Time Est.: Elapsed[31.06m], Remain[1.78h]
+[2024-05-12 14:49:12] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:49:12] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:49:29] TOPTrainer.py(152) : Epoch 116: Train (100%)  Score: 71.5237,  Loss: 14.0656
+[2024-05-12 14:49:29] TOPTrainer.py(82) : Epoch 116/510: Time Est.: Elapsed[31.34m], Remain[1.77h]
+[2024-05-12 14:49:29] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:49:29] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:49:45] TOPTrainer.py(152) : Epoch 117: Train (100%)  Score: 71.2448,  Loss: 14.5538
+[2024-05-12 14:49:45] TOPTrainer.py(82) : Epoch 117/510: Time Est.: Elapsed[31.61m], Remain[1.77h]
+[2024-05-12 14:49:45] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:49:45] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:50:01] TOPTrainer.py(152) : Epoch 118: Train (100%)  Score: 71.0295,  Loss: 15.2868
+[2024-05-12 14:50:01] TOPTrainer.py(82) : Epoch 118/510: Time Est.: Elapsed[31.87m], Remain[1.76h]
+[2024-05-12 14:50:01] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:50:01] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:50:17] TOPTrainer.py(152) : Epoch 119: Train (100%)  Score: 71.1085,  Loss: 15.4235
+[2024-05-12 14:50:17] TOPTrainer.py(82) : Epoch 119/510: Time Est.: Elapsed[32.14m], Remain[1.76h]
+[2024-05-12 14:50:17] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:50:17] TOPTrainer.py(68) : =================================================================
+[2024-05-12 14:50:33] TOPTrainer.py(152) : Epoch 120: Train (100%)  Score: 71.1712,  Loss: 14.3135
+[2024-05-12 14:50:33] TOPTrainer.py(82) : Epoch 120/510: Time Est.: Elapsed[32.41m], Remain[1.76h]
+[2024-05-12 14:50:33] TOPTrainer.py(91) : Saving log_image
+[2024-05-12 14:50:34] TOPTrainer.py(100) : Saving trained_model
+[2024-05-12 14:50:34] TOPTrainer.py(68) : =================================================================

@@ -60,8 +60,8 @@ tester_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
     'model_load': {
-        'path': '../../TOP/POMO/result/saved_TOP20_model',  # directory path of pre-trained model and log files saved.
-        'epoch': 310,  # epoch version of pre-trained model to laod.
+        'path': './result/20240512_202706_train_STOP_n20_with_instNorm',  # directory path of pre-trained model and log files saved.
+        'epoch': 510,  # epoch version of pre-trained model to laod.
     },
     'test_episodes': 10*1000,
     'test_batch_size': 1000,
@@ -170,7 +170,8 @@ class TOPTester:
         self.plot_nodes = np.array(self.plot_nodes)
         # print(f'prizes : {self.plot_prize}')
         # Plot the nodes
-        plt.scatter(self.plot_nodes[:, 0], self.plot_nodes[:, 1], color='Gray', s = self.plot_size )
+        plt.scatter(self.plot_nodes[:, 0], self.plot_nodes[:, 1], color='Gray')
+        # plt.scatter(self.plot_nodes[:, 0], self.plot_nodes[:, 1], color='Gray', s = self.plot_size )
         for i, node in enumerate(self.plot_nodes):
             plt.text(node[0], node[1], str(i + 1), fontsize=12, ha='center', va='center')
 
