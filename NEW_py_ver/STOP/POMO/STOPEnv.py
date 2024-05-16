@@ -205,23 +205,17 @@ class STOPEnv:
         # shape: (batch, pomo, problem+1, 2)
         self.gathering_index = selected[:, :, None, None].expand(-1, -1, 1, 2)
         # shape: (batch, pomo, 1, 1)
-        # print(self.gathering_index)
         self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
         # shape: (batch, pomo, 2)
-
-        # print(self.selected_prize)
-
         self.reward_tensor = torch.randn(self.batch_size, self.problem_size) * self.selected_prize[:,:,1] + self.selected_prize[:,:,0]
-        
-        # self.MEOW = self.selected_prize.sum(dim=-1)
-        # if self.selected_count == 1:
-        #     print(f'list: {self.prize_list}')
+        # shape: (batch, pomo)
         self.collected_prize += self.reward_tensor
+        # print(self.selected_prize)
         # print(f'\n +++ : {self.selected_prize} \n reward {self.reward_tensor}')
+
         selected_len = self.calculate_two_distance()
 
         self.remaining_len -= selected_len
-
 
         self.day_finished[self.at_the_depot] += 1
         self.remaining_len[self.at_the_depot & (self.day_finished < 4)] = 1.5 # reset length at the depot

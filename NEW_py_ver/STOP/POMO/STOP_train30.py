@@ -1,5 +1,4 @@
 ##########################################################################################
-
 import warnings
 
 # Filter out the specific UserWarnings you want to ignore
@@ -30,15 +29,15 @@ sys.path.insert(0, "../..")  # for utils
 import logging
 from utils.utils import create_logger, copy_all_src
 
-from OPTrainer import OPTrainer as Trainer
+from STOPTrainer import STOPTrainer as Trainer
 
 
 ##########################################################################################
 # parameters
 
 env_params = {
-    'problem_size': 20,
-    'pomo_size': 20,
+    'problem_size': 30,
+    'pomo_size': 30,
 }
 
 model_params = {
@@ -58,7 +57,7 @@ optimizer_params = {
         'weight_decay': 1e-6
     },
     'scheduler': {
-        'milestones': [701,],
+        'milestones': [451,],
         'gamma': 0.1
     }
 }
@@ -66,13 +65,13 @@ optimizer_params = {
 trainer_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
-    'epochs': 710 ,
+    'epochs': 510 ,
     'train_episodes': 10*1000,
     'train_batch_size': 64,
     'prev_model_path': None,
     'logging': {
-        'model_save_interval': 50,
-        'img_save_interval': 50,
+        'model_save_interval': 20,
+        'img_save_interval': 20,
         'log_image_params_1': {
             'json_foldername': 'log_image_style',
             'filename': 'style_OP_5.json'
@@ -92,7 +91,7 @@ trainer_params = {
 
 logger_params = {
     'log_file': {
-        'desc': 'train_op_n20_with_instNorm_710_epoch',
+        'desc': 'train_STOP_n30_with_instNorm',
         'filename': 'run_log'
     }
 }
@@ -121,8 +120,8 @@ def main():
 def _set_debug_mode():
     global trainer_params
     trainer_params['epochs'] = 1
-    trainer_params['train_episodes'] = 10
-    trainer_params['train_batch_size'] = 64
+    trainer_params['train_episodes'] = 1
+    trainer_params['train_batch_size'] = 1
 
 
 def _print_config():

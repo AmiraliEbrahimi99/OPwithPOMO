@@ -1,7 +1,13 @@
 ##########################################################################################
+import warnings
+
+# Filter out the specific UserWarnings you want to ignore
+warnings.filterwarnings("ignore", message="Use of index_put_ on expanded tensors is deprecated.")
+warnings.filterwarnings("ignore", message="Use of masked_fill_ on expanded tensors is deprecated.")
+
 # Machine Environment Config
 
-DEBUG_MODE = True
+DEBUG_MODE = False
 USE_CUDA = not DEBUG_MODE
 CUDA_DEVICE_NUM = 0
 
