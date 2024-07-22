@@ -63,8 +63,8 @@ tester_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
     'model_load': {
-        'path': './result/saved_TOP20_model',  # directory path of pre-trained model and log files saved.
-        'epoch': 310,  # epoch version of pre-trained model to laod.
+        'path': './result/20240425_021830_train_top_n20_with_instNorm 510 epoch',  # directory path of pre-trained model and log files saved.
+        'epoch': 200,  # epoch version of pre-trained model to laod.
     },
     'test_episodes': 10*1000,
     'test_batch_size': 1000,

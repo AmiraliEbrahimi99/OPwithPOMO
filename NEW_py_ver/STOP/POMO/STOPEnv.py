@@ -142,7 +142,7 @@ class STOPEnv:
         # shape: (batch, pomo)
         self.ninf_mask_first_step = torch.zeros(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
         # shape: (batch, pomo)
-        self.remaining_len = self.remain_len_number*torch.ones(size=(self.batch_size, self.pomo_size))               
+        self.remaining_len = 1.49813333*self.remain_len_number*torch.ones(size=(self.batch_size, self.pomo_size))               
         # shape: (batch, pomo)
         self.visited_ninf_flag = torch.zeros(size=(self.batch_size, self.pomo_size, self.problem_size+1))
         # shape: (batch, pomo, problem+1)

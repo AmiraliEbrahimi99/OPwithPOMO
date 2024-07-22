@@ -40,8 +40,8 @@ from STOPTester import STOPTester as Tester
 # parameters
 
 env_params = {
-    'problem_size': 20,
-    'pomo_size': 20,
+    'problem_size': 30,
+    'pomo_size': 30,
 }
 
 model_params = {
@@ -69,8 +69,8 @@ tester_params = {
     'aug_factor': 8,
     'aug_batch_size': 400,
     'test_data_load': {
-        'enable': False,
-        'filename': './saved_problem.pt'
+        'enable': True,
+        'filename': './stochastic_2008_problem.pt'
     },
 }
 if tester_params['augmentation_enable']:
@@ -165,15 +165,37 @@ class TOPTester:
         print(f'this is the path for batch: {batch}, pomo:{pomo} : {self.plot_path}')
         self.plot_depot = self.reset_state.depot_xy[batch][0].tolist()
         self.plot_nodes = self.reset_state.node_xy[batch].tolist()
-        self.plot_prize = self.reset_state.node_prize[batch].tolist()
-        self.plot_size = [i * 100 for i in self.plot_prize]
+        self.plot_prize = self.reset_state.node_prize
+       
+        # self.reward_tensor = torch.randn(1, env_params['problem_size']) * self.plot_prize[0,:,1] + self.plot_prize[0,:,0]
+        self.deviation_tensor = 100*self.plot_prize[0,:,1].cpu().numpy()
+        self.mean_tensor = self.plot_prize[0,:,0].cpu().numpy()
         self.plot_nodes = np.array(self.plot_nodes)
-        # print(f'prizes : {self.plot_prize}')
+
+        # Define the color mapping
+        cmap = plt.cm.get_cmap('gray', 4)
+        colors = ['White', 'Light Gray', 'Dark Gray', 'Black']      
+
+        # Create a list to store the colors for each node
+        node_colors = []
+
         # Plot the nodes
-        plt.scatter(self.plot_nodes[:, 0], self.plot_nodes[:, 1], color='Gray')
-        # plt.scatter(self.plot_nodes[:, 0], self.plot_nodes[:, 1], color='Gray', s = self.plot_size )
+        for i in range(30):
+            if self.mean_tensor[i] < 5:
+                node_colors.append(colors[0])  # White
+            elif self.mean_tensor[i] < 5.5:
+                node_colors.append(colors[1])  # Light Gray
+            elif self.mean_tensor[i] < 6:
+                node_colors.append(colors[2])  # Dark Gray
+            else:
+                node_colors.append(colors[3])  # Black
+        # Create a dictionary to map color names to their corresponding RGB values
+        color_map = {'White': (0.9, 0.9, 0.9), 'Light Gray': (0.7, 0.7, 0.7), 'Dark Gray': (0.4, 0.4, 0.4), 'Black': (0.2, 0.2, 0.2)}
+        # Plot the nodes
+        node_colors_rgb = [color_map[color] for color in node_colors]
+        plt.scatter(self.plot_nodes[:, 0], self.plot_nodes[:, 1], c=node_colors_rgb, s=self.deviation_tensor)
         for i, node in enumerate(self.plot_nodes):
-            plt.text(node[0], node[1], str(i + 1), fontsize=12, ha='center', va='center')
+            plt.text(node[0], node[1], str(i + 1), fontsize=10, ha='center', va='center', color='yellow')
 
         # Plot the depot with a different color
         plt.scatter(self.plot_depot[0], self.plot_depot[1], color='red')
@@ -191,7 +213,7 @@ class TOPTester:
                 continue
             
             plt.arrow(start[0], start[1], end[0] - start[0], end[1] - start[1], head_width=0.05, head_length=0.02,
-                        fc='white', ec='red')
+                        fc='red', ec='red')
 
         plt.title('Orienteering Problem')
         plt.xlabel('X-coordinate')

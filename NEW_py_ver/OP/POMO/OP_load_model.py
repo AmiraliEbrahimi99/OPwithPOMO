@@ -43,8 +43,8 @@ from OPTester import OPTester as Tester
 # parameters
 
 env_params = {
-    'problem_size': 20,
-    'pomo_size': 20,
+    'problem_size': 19,
+    'pomo_size': 19,
 }
 
 model_params = {
@@ -63,8 +63,8 @@ tester_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
     'model_load': {
-        'path': './result/saved_OP20_model',  # directory path of pre-trained model and log files saved.
-        'epoch': 510,  # epoch version of pre-trained model to laod.
+        'path': './result/1700epoch',  # directory path of pre-trained model and log files saved.
+        'epoch': 1700,  # epoch version of pre-trained model to laod.
     },
     'test_episodes': 10*1000,
     'test_batch_size': 1000,
@@ -72,8 +72,8 @@ tester_params = {
     'aug_factor': 8,
     'aug_batch_size': 400,
     'test_data_load': {
-        'enable': True,
-        'filename': './saved_problem.pt'
+        'enable': False,
+        'filename': './op19_instance_tsiligirides_problem_2_budget_15.pt'
     },
 }
 if tester_params['augmentation_enable']:
@@ -156,7 +156,7 @@ class OPTester:
             self.path[self.step_count] = selected
 
     def plot(self,batch : int = 0 , pomo : int = 0 , best_result : bool = False) :
-        print(f'whole reawrds are {self.reward}')
+        print(f'\nwhole reawrds are {self.reward}\n')
         if best_result: 
             pomo = torch.argmax(self.reward)
             print(f'the best pomo is :{pomo}')
@@ -165,7 +165,7 @@ class OPTester:
         for i in self.path:
             self.plot_path.append(int(self.path[i][batch][pomo]))
         
-        print(f'this is the path for batch: {batch}, pomo:{pomo} : {self.plot_path}')
+        print(f'this is the path for batch: {batch}, pomo:{pomo} : {self.plot_path} with reward: {self.reward[batch,pomo]}\n')
         self.plot_depot = self.reset_state.depot_xy[batch][0].tolist()
         self.plot_nodes = self.reset_state.node_xy[batch].tolist()
         self.plot_prize = self.reset_state.node_prize[batch].tolist()
@@ -200,9 +200,9 @@ class OPTester:
         plt.ylabel('Y-coordinate')
         plt.grid(True)
         plt.axis('equal')
-        plt.show()       
+        # plt.show()       
 
-     
+        plt.savefig('my_plot.png', dpi=300)
 if __name__ == '__main__' : 
     self = OPTester(env_params=env_params, model_params=model_params, tester_params=tester_params)
     self.run(batch_size=1)
