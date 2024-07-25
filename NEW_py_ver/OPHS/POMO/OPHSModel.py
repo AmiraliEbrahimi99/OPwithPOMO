@@ -13,11 +13,11 @@ class OPHSModel(nn.Module):
         self.encoder = OPHS_Encoder(**model_params)
         self.decoder = OPHS_Decoder(**model_params)
         self.encoded_nodes = None
-        # shape: (batch, problem+1, EMBEDDING_DIM)
+        # shape: (batch, problem+2, EMBEDDING_DIM)
 
     def pre_forward(self, reset_state):
-            hotel_xy = reset_state.hotel_xy
-            # shape: (batch, 1, 2)
+            depot_xy = reset_state.depot_xy
+            # shape: (batch, 2, 2)
             node_xy = reset_state.node_xy
             # shape: (batch, problem, 2)
             node_prize = reset_state.node_prize
@@ -25,9 +25,8 @@ class OPHSModel(nn.Module):
             node_xy_prize = torch.cat((node_xy, node_prize[:, :, None]), dim=2)
             # shape: (batch, problem, 3)
 
-            self.encoded_nodes = self.encoder(hotel_xy, node_xy_prize)
-            # shape: (batch, problem+1, embedding)
-
+            self.encoded_nodes = self.encoder(depot_xy, node_xy_prize)
+            # shape: (batch, problem+2, embedding)
             self.decoder.set_kv(self.encoded_nodes)
 
     def forward(self, state):
@@ -35,19 +34,20 @@ class OPHSModel(nn.Module):
         pomo_size = state.BATCH_IDX.size(1)
 
 
-        if state.selected_count == 0:  # First Move, hotel
+        if state.selected_count == 0:  # First Move, depot
             selected = torch.zeros(size=(batch_size, pomo_size), dtype=torch.long)
             prob = torch.ones(size=(batch_size, pomo_size))
 
         elif state.selected_count == 1:  # Second Move, POMO
-            selected = torch.arange(start=1, end=pomo_size+1)[None, :].expand(batch_size, pomo_size)
+            selected = torch.arange(start=2, end=pomo_size+2)[None, :].expand(batch_size, pomo_size)
+            selected[state.finished] = 0                                                                    #new condition
             prob = torch.ones(size=(batch_size, pomo_size))
 
         else:
             encoded_last_node = _get_encoding(self.encoded_nodes, state.current_node)
             # shape: (batch, pomo, embedding)
-            probs = self.decoder(encoded_last_node, state.remaining_len, ninf_mask=state.ninf_mask)          #@todo mask
-            # shape: (batch, pomo, problem+1)
+            probs = self.decoder(encoded_last_node, state.remaining_len, ninf_mask=state.ninf_mask)          
+            # shape: (batch, pomo, problem+2)
 
             if self.training or self.model_params['eval_type'] == 'softmax':
                 while True:  # to fix pytorch.multinomial bug on selecting 0 probability elements
@@ -97,27 +97,27 @@ class OPHS_Encoder(nn.Module):
         embedding_dim = self.model_params['embedding_dim']
         encoder_layer_num = self.model_params['encoder_layer_num']
 
-        self.embedding_hotel = nn.Linear(2, embedding_dim)
+        self.embedding_depot = nn.Linear(2, embedding_dim)
         self.embedding_node = nn.Linear(3, embedding_dim)
         self.layers = nn.ModuleList([EncoderLayer(**model_params) for _ in range(encoder_layer_num)])
 
-    def forward(self, hotel_xy, node_xy_prize):
-        # hotel_xy.shape: (batch, 1, 2)
+    def forward(self, depot_xy, node_xy_prize):
+        # depot_xy.shape: (batch, 2, 2)
         # node_xy_prize.shape: (batch, problem, 3)
 
-        embedded_hotel = self.embedding_hotel(hotel_xy)
-        # shape: (batch, 1, embedding)
+        embedded_depot = self.embedding_depot(depot_xy)
+        # shape: (batch, 2, embedding)
         embedded_node = self.embedding_node(node_xy_prize)
         # shape: (batch, problem, embedding)
 
-        out = torch.cat((embedded_hotel, embedded_node), dim=1)
-        # shape: (batch, problem+1, embedding)
+        out = torch.cat((embedded_depot, embedded_node), dim=1)
+        # shape: (batch, problem+2, embedding)
 
         for layer in self.layers:
             out = layer(out)
 
         return out
-        # shape: (batch, problem+1, embedding)
+        # shape: (batch, problem+2, embedding)
 
 
 class EncoderLayer(nn.Module):
@@ -138,27 +138,27 @@ class EncoderLayer(nn.Module):
         self.add_n_normalization_2 = AddAndInstanceNormalization(**model_params)
         self.out3 = None
     def forward(self, input1):
-        # input1.shape: (batch, problem+1, embedding)
+        # input1.shape: (batch, problem+2, embedding)
         head_num = self.model_params['head_num']
 
         q = reshape_by_heads(self.Wq(input1), head_num=head_num)
         k = reshape_by_heads(self.Wk(input1), head_num=head_num)
         v = reshape_by_heads(self.Wv(input1), head_num=head_num)
-        # Wqkv shape: (batch, problem+1, head_num*qkv_dim)
-        # qkv shape: (batch, head_num, problem+1, qkv_dim)
+        # Wqkv shape: (batch, problem+2, head_num*qkv_dim)
+        # qkv shape: (batch, head_num, problem+2, qkv_dim)
 
         out_concat = multi_head_attention(q, k, v)
-        # shape: (batch, problem+1, head_num*qkv_dim)
+        # shape: (batch, problem+2, head_num*qkv_dim)
 
         multi_head_out = self.multi_head_combine(out_concat)
-        # shape: (batch, problem+1, embedding)
+        # shape: (batch, problem+2, embedding)
 
         out1 = self.add_n_normalization_1(input1, multi_head_out)
         out2 = self.feed_forward(out1)
         out3 = self.add_n_normalization_2(out1, out2)
 
         return out3
-        # shape: (batch, problem+1, embedding)
+        # shape: (batch, problem+2, embedding)
 
 
 ########################################
@@ -188,14 +188,14 @@ class OPHS_Decoder(nn.Module):
         # self.q2 = None  # saved q2, for multi-head attention
 
     def set_kv(self, encoded_nodes):
-        # encoded_nodes.shape: (batch, problem+1, embedding)
+        # encoded_nodes.shape: (batch, problem+2, embedding)
         head_num = self.model_params['head_num']
 
         self.k = reshape_by_heads(self.Wk(encoded_nodes), head_num=head_num)
         self.v = reshape_by_heads(self.Wv(encoded_nodes), head_num=head_num)
-        # shape: (batch, head_num, problem+1, qkv_dim)
+        # shape: (batch, head_num, problem+2, qkv_dim)
         self.single_head_key = encoded_nodes.transpose(1, 2)
-        # shape: (batch, embedding, problem+1)
+        # shape: (batch, embedding, problem+2)
 
     # def set_q1(self, encoded_q1):
     #     # encoded_q.shape: (batch, n, embedding)  # n can be 1 or pomo
@@ -219,7 +219,7 @@ class OPHS_Decoder(nn.Module):
         #  Multi-Head Attention
         #######################################################
         input_cat = torch.cat((encoded_last_node, load[:, :, None]), dim=2)
-        # shape = (batch, pomo, EMBEDDING_DIM+1)
+        # shape = (batch, pomo, EMBEDDING_DIM+2)
 
         q_last = reshape_by_heads(self.Wq_last(input_cat), head_num=head_num)
         # shape: (batch, head_num, pomo, qkv_dim)
@@ -289,7 +289,7 @@ def multi_head_attention(q, k, v, rank2_ninf_mask=None, rank3_ninf_mask=None):
     input_s = k.size(2)
 
     score = torch.matmul(q, k.transpose(2, 3))
-    # shape: (batch, head_num, n, problem)
+    # shape: (batch, head_num, n, problem)    
 
     score_scaled = score / torch.sqrt(torch.tensor(key_dim, dtype=torch.float))
     if rank2_ninf_mask is not None:
