@@ -36,8 +36,8 @@ from TOPTrainer import TOPTrainer as Trainer
 # parameters
 
 env_params = {
-    'problem_size': 20,
-    'pomo_size': 20,
+    'problem_size': 40,
+    'pomo_size': 40,
 }
 
 model_params = {
@@ -120,8 +120,8 @@ def main():
 def _set_debug_mode():
     global trainer_params
     trainer_params['epochs'] = 1
-    trainer_params['train_episodes'] = 1
-    trainer_params['train_batch_size'] = 1
+    trainer_params['train_episodes'] = 2
+    trainer_params['train_batch_size'] = 2
 
 
 def _print_config():

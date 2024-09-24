@@ -23,15 +23,15 @@ sys.path.insert(0, "../..")  # for utils
 import logging
 from utils.utils import create_logger, copy_all_src
 
-from TOPTester import OPHSTester as Tester
+from TOPTester import TOPTester as Tester
 
 
 ##########################################################################################
 # parameters
 
 env_params = {
-    'problem_size': 20,
-    'pomo_size': 20,
+    'problem_size': 40,
+    'pomo_size': 40,
 }
 
 model_params = {
@@ -50,8 +50,8 @@ tester_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
     'model_load': {
-        'path': './result/saved_TOP20_model',  # directory path of pre-trained model and log files saved.
-        'epoch': 310,  # epoch version of pre-trained model to laod.
+        'path': './result/train_top_n40_with_instNorm 510 epoch 3 day',  # directory path of pre-trained model and log files saved.
+        'epoch': 510,  # epoch version of pre-trained model to laod.
     },
     'test_episodes': 10*1000,
     'test_batch_size': 1000,
@@ -69,7 +69,7 @@ if tester_params['augmentation_enable']:
 
 logger_params = {
     'log_file': {
-        'desc': 'test_TOP20',
+        'desc': 'test_TOP40_8day_with3daypretrain',
         'filename': 'log.txt'
     }
 }

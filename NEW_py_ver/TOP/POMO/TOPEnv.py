@@ -216,7 +216,7 @@ class TOPEnv:
 
 
         self.day_finished[self.at_the_depot] += 1
-        self.remaining_len[self.at_the_depot & (self.day_finished < 4)] = 1.5 # reset length at the depot
+        self.remaining_len[self.at_the_depot & (self.day_finished < 9)] = 1.5 # reset length at the depot
 
         # self.day_finished[self.at_the_depot & ~self.ninf_mask_first_step & (self.selected_count > 1)] += 1
         # self.day_finished[self.at_the_depot & (self.selected_count > 1)] += 1
@@ -269,7 +269,7 @@ class TOPEnv:
         done = self.finished.all()
         if done:
             reward = self.collected_prize
-            print(f'########selected nodes######## \n{self.selected_node_list}\n##############reward######### \n{reward}')    #for testing
+            # print(f'########selected nodes######## \n{self.selected_node_list}\n##############reward######### \n{reward}')    #for testing
         else:
             reward = None
 

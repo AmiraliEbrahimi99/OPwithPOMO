@@ -1,0 +1,8 @@
+[2024-09-21 02:26:49] OPHS_train20.py(129) : DEBUG_MODE: True
+[2024-09-21 02:26:49] OPHS_train20.py(130) : USE_CUDA: False, CUDA_DEVICE_NUM: 0
+[2024-09-21 02:26:49] OPHS_train20.py(131) : env_params{'problem_size': 20, 'pomo_size': 20}
+[2024-09-21 02:26:49] OPHS_train20.py(131) : model_params{'embedding_dim': 128, 'sqrt_embedding_dim': 11.313708498984761, 'encoder_layer_num': 6, 'qkv_dim': 16, 'head_num': 8, 'logit_clipping': 10, 'ff_hidden_dim': 512, 'eval_type': 'argmax'}
+[2024-09-21 02:26:49] OPHS_train20.py(131) : optimizer_params{'optimizer': {'lr': 0.0001, 'weight_decay': 1e-06}, 'scheduler': {'milestones': [90], 'gamma': 0.1}}
+[2024-09-21 02:26:49] OPHS_train20.py(131) : trainer_params{'use_cuda': False, 'cuda_device_num': 0, 'epochs': 3, 'train_episodes': 10, 'train_batch_size': 2, 'prev_model_path': None, 'logging': {'model_save_interval': 20, 'img_save_interval': 20, 'log_image_params_1': {'json_foldername': 'log_image_style', 'filename': 'style_OP_5.json'}, 'log_image_params_2': {'json_foldername': 'log_image_style', 'filename': 'style_loss_1.json'}}, 'model_load': {'enable': False}}
+[2024-09-21 02:26:49] OPHS_train20.py(131) : logger_params{'log_file': {'desc': 'train_ophs_n20_with_instNorm_200_epoch', 'filename': 'run_log', 'filepath': './result/20240921_022649_train_ophs_n20_with_instNorm_200_epoch'}}
+[2024-09-21 02:26:49] OPHSTrainer.py(68) : =================================================================

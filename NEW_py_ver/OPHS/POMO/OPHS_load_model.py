@@ -23,7 +23,6 @@ from utils.utils import *
 # Machine Environment Config
 
 DEBUG_MODE = False 
-DEBUG_MODE = False 
 USE_CUDA = not DEBUG_MODE
 CUDA_DEVICE_NUM = 0
 
@@ -43,8 +42,10 @@ from OPHSTester import OPHSTester as Tester
 # parameters
 
 env_params = {
-    'problem_size': 19,
-    'pomo_size': 19,
+    'problem_size': 15,
+    'pomo_size': 15,
+    'hotel_size': 7,
+    'day_number': 3,
 }
 
 model_params = {
@@ -63,17 +64,17 @@ tester_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
     'model_load': {
-        'path': './result/1700epoch',  # directory path of pre-trained model and log files saved.
-        'epoch': 1700,  # epoch version of pre-trained model to laod.
+        'path': './result/ophs_H7D3_510',  # directory path of pre-trained model and log files saved.
+        'epoch': 510,  # epoch version of pre-trained model to laod.
     },
     'test_episodes': 10*1000,
     'test_batch_size': 1000,
-    'augmentation_enable': False,
+    'augmentation_enable': True,
     'aug_factor': 8,
     'aug_batch_size': 400,
     'test_data_load': {
-        'enable': False,
-        'filename': './op19_instance_tsiligirides_problem_2_budget_15.pt'
+        'enable': True,
+        'filename': './T1-65-5-3.pt'
     },
 }
 if tester_params['augmentation_enable']:
@@ -166,7 +167,13 @@ class OPTester:
             self.plot_path.append(int(self.path[i][batch][pomo]))
         
         print(f'this is the path for batch: {batch}, pomo:{pomo} : {self.plot_path} with reward: {self.reward[batch,pomo]}\n')
-        self.plot_depot = self.reset_state.depot_xy[batch][0].tolist()
+        self.plot_depot1 = self.reset_state.depot_xy[batch][0].tolist()
+        self.plot_depot2 = self.reset_state.depot_xy[batch][1].tolist()  # second depot coordinates
+        self.plot_depot3 = self.reset_state.depot_xy[batch][2].tolist()  # third depot coordinates
+        self.plot_depot4 = self.reset_state.depot_xy[batch][3].tolist()  # fourth depot coordinates
+        self.plot_depot5 = self.reset_state.depot_xy[batch][4].tolist()  # fifth depot coordinates
+        self.plot_depot6 = self.reset_state.depot_xy[batch][5].tolist()  # sixth depot coordinates
+        self.plot_depot7 = self.reset_state.depot_xy[batch][6].tolist()  # seventh depot coordinates
         self.plot_nodes = self.reset_state.node_xy[batch].tolist()
         self.plot_prize = self.reset_state.node_prize[batch].tolist()
         self.plot_size = [i * 100 for i in self.plot_prize]
@@ -175,11 +182,24 @@ class OPTester:
         # Plot the nodes
         plt.scatter(self.plot_nodes[:, 0], self.plot_nodes[:, 1], color='Gray', s = self.plot_size )
         for i, node in enumerate(self.plot_nodes):
-            plt.text(node[0], node[1], str(i + 1), fontsize=12, ha='center', va='center')
+            plt.text(node[0], node[1], str(i + 7), fontsize=12, ha='center', va='center')
 
-        # Plot the depot with a different color
-        plt.scatter(self.plot_depot[0], self.plot_depot[1], color='red')
-        plt.text(self.plot_depot[0], self.plot_depot[1], 'Depot', fontsize=12, ha='center', va='bottom')
+        # Plot the two depots with different colors
+        plt.scatter(self.plot_depot1[0], self.plot_depot1[1], color='green')
+        plt.text(self.plot_depot1[0], self.plot_depot1[1], 'Hotel 1', fontsize=12, ha='center', va='bottom')
+        plt.scatter(self.plot_depot2[0], self.plot_depot2[1], color='green')  # second depot
+        plt.text(self.plot_depot2[0], self.plot_depot2[1], 'Hotel 2', fontsize=12, ha='center', va='bottom')
+        plt.scatter(self.plot_depot3[0], self.plot_depot3[1], color='green')  # third depot
+        plt.text(self.plot_depot3[0], self.plot_depot3[1], 'Hotel 3', fontsize=12, ha='center', va='bottom')
+        plt.scatter(self.plot_depot4[0], self.plot_depot4[1], color='green')  # fourth depot
+        plt.text(self.plot_depot4[0], self.plot_depot4[1], 'Hotel 4', fontsize=12, ha='center', va='bottom')
+        plt.scatter(self.plot_depot5[0], self.plot_depot5[1], color='green')  # fifth depot
+        plt.text(self.plot_depot5[0], self.plot_depot5[1], 'Hotel 5', fontsize=12, ha='center', va='bottom')
+        plt.scatter(self.plot_depot6[0], self.plot_depot6[1], color='green')  # sixth depot
+        plt.text(self.plot_depot6[0], self.plot_depot6[1], 'Hotel 6', fontsize=12, ha='center', va='bottom')
+        plt.scatter(self.plot_depot7[0], self.plot_depot7[1], color='green')  # seventh depot
+        plt.text(self.plot_depot7[0], self.plot_depot7[1], 'Hotel 7', fontsize=12, ha='center', va='bottom')
+
 
         # plot arrows
         self.plot_nodes = self.reset_state.node_xy[batch].tolist()

@@ -39,7 +39,7 @@ class TOPModel(nn.Module):
             prob = torch.ones(size=(batch_size, pomo_size))
 
         elif state.selected_count == 1:  # Second Move, POMO
-            selected = torch.arange(start=1, end=pomo_size+1)[None, :].expand(batch_size, pomo_size)
+            selected = torch.arange(start=1, end=pomo_size+1)[None, :].repeat(batch_size, 1)
             selected[state.finished] = 0                                                                    #new condition
             prob = torch.ones(size=(batch_size, pomo_size))
 

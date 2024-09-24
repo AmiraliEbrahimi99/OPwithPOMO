@@ -2,14 +2,17 @@ import torch
 import numpy as np
 
 
-def get_random_problems(batch_size, problem_size):
+def get_random_problems(batch_size, problem_size, hotel_size, day_number):
  
-    depot_xy = torch.rand(size=(batch_size, 2 ,2))
+    depot_xy = torch.rand(size=(batch_size, hotel_size ,2))
 
-    node_xy = torch.rand(size=(batch_size, problem_size, 2))
-    node_prize = torch.randint(1, 10, size=(batch_size, problem_size))
+    trip_length = 0.7 + (0.7 * torch.rand(batch_size, day_number))      #0.7 to 1.4
+    # remaining_len = torch.ones(size=(batch_size, day_number))         #for fixed trip length
     
-    return depot_xy, node_xy , node_prize 
+    node_xy = torch.rand(size=(batch_size, problem_size, 2))
+    node_prize = torch.randint(1, 10, size=(batch_size, problem_size))  # 1 to 9
+    
+    return depot_xy, node_xy, node_prize, trip_length
 
 def augment_xy_data_by_8_fold(xy_data):
     # xy_data.shape: (batch, N, 2)
