@@ -6,6 +6,8 @@ from OPHSProblemDef import get_random_problems, augment_xy_data_by_8_fold
 class Reset_state : 
     depot_xy: torch.Tensor = None
     # shape: (batch, hotel, 2)
+    trip_length: torch.Tensor = None
+    # shape: (batch, day, 1)
     node_xy : torch.Tensor = None
     # shape: (batch, problem, 2)
     node_prize : torch.Tensor = None
@@ -133,6 +135,7 @@ class OPHSEnv:
         self.reset_state.depot_xy = self.depot_xy
         self.reset_state.node_xy = self.node_xy
         self.reset_state.node_prize = node_prize
+        self.reset_state.trip_length = trip_length
         
         self.step_state.BATCH_IDX = self.BATCH_IDX
         self.step_state.POMO_IDX = self.POMO_IDX

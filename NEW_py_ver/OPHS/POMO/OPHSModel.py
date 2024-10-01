@@ -13,11 +13,13 @@ class OPHSModel(nn.Module):
         self.encoder = OPHS_Encoder(**model_params)
         self.decoder = OPHS_Decoder(**model_params)
         self.encoded_nodes = None
-        # shape: (batch, problem+2, EMBEDDING_DIM)
+        # shape: (batch, problem+hotel, EMBEDDING_DIM)
 
     def pre_forward(self, reset_state):
             depot_xy = reset_state.depot_xy
             # shape: (batch, hotel, 2)
+            trip_length = reset_state.trip_length
+            # shape: (batch, day, 1)
             node_xy = reset_state.node_xy
             # shape: (batch, problem, 2)
             node_prize = reset_state.node_prize
@@ -25,8 +27,8 @@ class OPHSModel(nn.Module):
             node_xy_prize = torch.cat((node_xy, node_prize[:, :, None]), dim=2)
             # shape: (batch, problem, 3)
 
-            self.encoded_nodes = self.encoder(depot_xy, node_xy_prize)
-            # shape: (batch, problem+hotel, embedding)
+            self.encoded_nodes = self.encoder(depot_xy, node_xy_prize, trip_length)
+            # shape: (batch, problem+hotel+day, embedding)
             self.decoder.set_kv(self.encoded_nodes)
 
     def forward(self, state):
@@ -97,21 +99,26 @@ class OPHS_Encoder(nn.Module):
         embedding_dim = self.model_params['embedding_dim']
         encoder_layer_num = self.model_params['encoder_layer_num']
 
+
+        self.embedding_length = nn.Linear(1, embedding_dim)
         self.embedding_depot = nn.Linear(2, embedding_dim)
         self.embedding_node = nn.Linear(3, embedding_dim)
         self.layers = nn.ModuleList([EncoderLayer(**model_params) for _ in range(encoder_layer_num)])
 
-    def forward(self, depot_xy, node_xy_prize):
+    def forward(self, depot_xy, node_xy_prize, trip_length):
+        # trip_length.shape: (batch, day, 1)
         # depot_xy.shape: (batch, hotel, 2)
         # node_xy_prize.shape: (batch, problem, 3)
 
+        embedded_length = self.embedding_length(trip_length)
+        # shape: (batch, day, embedding)
         embedded_depot = self.embedding_depot(depot_xy)
         # shape: (batch, hotel, embedding)
         embedded_node = self.embedding_node(node_xy_prize)
         # shape: (batch, problem, embedding)
 
-        out = torch.cat((embedded_depot, embedded_node), dim=1)
-        # shape: (batch, problem+hotel, embedding)
+        out = torch.cat((embedded_depot, embedded_node,embedded_length), dim=1)
+        # shape: (batch, problem+hotel+day, embedding)
 
         for layer in self.layers:
             out = layer(out)
@@ -138,17 +145,17 @@ class EncoderLayer(nn.Module):
         self.add_n_normalization_2 = AddAndInstanceNormalization(**model_params)
         self.out3 = None
     def forward(self, input1):
-        # input1.shape: (batch, problem+hotel, embedding)
+        # input1.shape: (batch, problem+hotel+day, embedding)
         head_num = self.model_params['head_num']
 
         q = reshape_by_heads(self.Wq(input1), head_num=head_num)
         k = reshape_by_heads(self.Wk(input1), head_num=head_num)
         v = reshape_by_heads(self.Wv(input1), head_num=head_num)
-        # Wqkv shape: (batch, problem+hotel, head_num*qkv_dim)
-        # qkv shape: (batch, head_num, problem+hotel, qkv_dim)
+        # Wqkv shape: (batch, problem+hotel+day, head_num*qkv_dim)
+        # qkv shape: (batch, head_num, problem+hotel+day, qkv_dim)
 
         out_concat = multi_head_attention(q, k, v)
-        # shape: (batch, problem+hotel, head_num*qkv_dim)
+        # shape: (batch, problem+hotel+day, head_num*qkv_dim)
 
         multi_head_out = self.multi_head_combine(out_concat)
         # shape: (batch, problem+hotel, embedding)
