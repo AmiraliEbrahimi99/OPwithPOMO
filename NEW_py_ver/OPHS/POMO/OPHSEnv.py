@@ -107,7 +107,7 @@ class OPHSEnv:
             trip_length = self.saved_remaining_len[self.saved_index:self.saved_index+batch_size]
             self.saved_index += batch_size
        
-        self.trip_length = trip_length
+        # self.trip_length = trip_length
         self.depot_xy = depot_xy
         self.node_xy = node_xy
 
@@ -126,7 +126,9 @@ class OPHSEnv:
         # shape: (batch, hotel)
         self.depot_node_prize = torch.cat((depot_prize, node_prize), dim=1)
         # shape: (batch, problem+hotel)
-    
+
+        self.trip_length = trip_length.squeeze(2)
+        # shape: (batch, day)
         
         self.BATCH_IDX = torch.arange(self.batch_size)[:, None].expand(self.batch_size, self.pomo_size)
         self.POMO_IDX = torch.arange(self.pomo_size)[None, :].expand(self.batch_size, self.pomo_size)

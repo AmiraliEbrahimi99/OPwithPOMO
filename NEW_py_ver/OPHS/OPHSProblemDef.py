@@ -7,6 +7,7 @@ def get_random_problems(batch_size, problem_size, hotel_size, day_number):
     depot_xy = torch.rand(size=(batch_size, hotel_size ,2))
 
     trip_length = 0.7 + (0.7 * torch.rand(batch_size, day_number, 1))      #0.7 to 1.4
+    # trip_length = 0.7 + (0.7 * torch.rand(batch_size, day_number))      #0.7 to 1.4
     # trip_length = torch.ones(size=(batch_size, day_number, 1))         #for fixed trip length
     
     node_xy = torch.rand(size=(batch_size, problem_size, 2))
