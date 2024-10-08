@@ -314,8 +314,13 @@ class OPHSEnv:
         self.step_state.selected_count = self.selected_count
         self.step_state.remaining_len = self.remaining_len
         self.step_state.current_node = self.current_node
-        self.step_state.ninf_mask = self.ninf_mask
         self.step_state.finished = self.finished
+        # Create a new tensor filled with -inf with the same batch and pomo but with the additional 'day' dimension  
+        negative_inf_tensor = torch.full((self.batch_size, self.pomo_size, self.day_number), float('-inf'))  
+        # Concatenate the original tensor with the new tensor along the last dimension  
+        result_mask_tensor = torch.cat((self.ninf_mask, negative_inf_tensor), dim=-1) 
+        
+        self.step_state.ninf_mask = result_mask_tensor
 
         done = self.finished.all()
         if done:

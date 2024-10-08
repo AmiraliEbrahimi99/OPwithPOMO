@@ -110,6 +110,7 @@ class OPHS_Encoder(nn.Module):
         # depot_xy.shape: (batch, hotel, 2)
         # node_xy_prize.shape: (batch, problem, 3)
 
+        #@ todo: add normaliztion for this
         embedded_length = self.embedding_length(trip_length)
         # shape: (batch, day, embedding)
         embedded_depot = self.embedding_depot(depot_xy)
@@ -195,14 +196,14 @@ class OPHS_Decoder(nn.Module):
         # self.q2 = None  # saved q2, for multi-head attention
 
     def set_kv(self, encoded_nodes):
-        # encoded_nodes.shape: (batch, problem+hotel, embedding)
+        # encoded_nodes.shape: (batch, problem+hotel+day, embedding)
         head_num = self.model_params['head_num']
 
         self.k = reshape_by_heads(self.Wk(encoded_nodes), head_num=head_num)
         self.v = reshape_by_heads(self.Wv(encoded_nodes), head_num=head_num)
-        # shape: (batch, head_num, problem+hotel, qkv_dim)
+        # shape: (batch, head_num, problem+hotel+day, qkv_dim)
         self.single_head_key = encoded_nodes.transpose(1, 2)
-        # shape: (batch, embedding, problem+hotel)
+        # shape: (batch, embedding, problem+hotel+day)
 
     # def set_q1(self, encoded_q1):
     #     # encoded_q.shape: (batch, n, embedding)  # n can be 1 or pomo
