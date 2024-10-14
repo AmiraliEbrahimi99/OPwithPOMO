@@ -62,7 +62,7 @@ tester_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
     'model_load': {
-        'path': './result/20240821_145917_train_ophs_n30_with_instNorm_100_epoch',  # directory path of pre-trained model and log files saved.
+        'path': './result/train_ophs_n30_with_instNorm_100_epoch_static_order',  # directory path of pre-trained model and log files saved.
         'epoch': 100,  # epoch version of pre-trained model to laod.
     },
     'test_episodes': 10*1000,
@@ -71,8 +71,9 @@ tester_params = {
     'aug_factor': 8,
     'aug_batch_size': 400,
     'test_data_load': {
-        'enable': False,
-        'filename': './op19_instance_tsiligirides_problem_2_budget_15.pt'
+        'enable': True,
+        'filename': './random_problem_4test_NO2.pt',
+        'hotel_swap': True
     },
 }
 if tester_params['augmentation_enable']:
@@ -81,7 +82,7 @@ if tester_params['augmentation_enable']:
 
 logger_params = {
     'log_file': {
-        'desc': 'test_op20',
+        'desc': 'test_ophs30_static',
         'filename': 'log.txt'
     }
 }
@@ -119,8 +120,11 @@ class OPTester:
         # ENV and MODEL
         self.env = Env(**self.env_params)
         self.model = Model(**self.model_params)
+        
         if self.tester_params['test_data_load']['enable']:
-            self.env.use_saved_problems(self.tester_params['test_data_load']['filename'], self.device)
+            self.env.use_saved_problems(self.tester_params['test_data_load']['filename'], self.device, hotel_swap= self.tester_params['test_data_load']['hotel_swap'], order= hotel_order)
+        
+        
         # Restore
         model_load = tester_params['model_load']
         checkpoint_fullname = '{path}/checkpoint-{epoch}.pt'.format(**model_load)
@@ -131,6 +135,12 @@ class OPTester:
         self.time_estimator = TimeEstimator()
     
     def run(self, batch_size : int = 1):
+        self.reward = None
+        done = False
+        self.path = {}
+        self.step_count = 0
+        
+        
         # Augmentation
         ###############################################
         if self.tester_params['augmentation_enable']:
@@ -154,17 +164,34 @@ class OPTester:
             state, self.reward, done = self.env.step(selected)     
             self.path[self.step_count] = selected
 
-    def plot(self,batch : int = 0 , pomo : int = 0 , best_result : bool = False) :
-        print(f'\nwhole reawrds are {self.reward}\n')
-        if best_result: 
-            pomo = torch.argmax(self.reward)
-            print(f'the best pomo is :{pomo}')
+  
+        # print(f'\nwhole reawrds are {self.reward}\n')
+       
+        pomo = torch.argmax(self.reward)
+        # print(f'the best pomo is :{pomo}')
 
+        batch = 0
         self.plot_path=[] 
         for i in self.path:
             self.plot_path.append(int(self.path[i][batch][pomo]))
         
-        print(f'this is the path for batch: {batch}, pomo:{pomo} : {self.plot_path} with reward: {self.reward[batch,pomo]}\n')
+        # print(f'this is the path for batch: {batch}, pomo:{pomo} : {self.plot_path} with reward: {self.reward[batch,pomo]}\n')
+        plot_paths[hotel_order] = self.plot_path
+        best_rewards[hotel_order] = self.reward[batch, pomo]
+
+
+
+    def plot(self,batch : int = 0 , pomo : int = 0 , best_result : bool = False) :
+        # print(f'\nwhole reawrds are {self.reward}\n')
+        # if best_result: 
+        #     pomo = torch.argmax(self.reward)
+        #     print(f'the best pomo is :{pomo}')
+
+        # self.plot_path=[] 
+        # for i in self.path:
+        #     self.plot_path.append(int(self.path[i][batch][pomo]))
+        # print(f'this is the path for batch: {batch}, pomo:{pomo} : {self.plot_path} with reward: {self.reward[batch,pomo]}\n')
+
         self.plot_depot1 = self.reset_state.depot_xy[batch][0].tolist()
         self.plot_depot2 = self.reset_state.depot_xy[batch][1].tolist()  # second depot coordinates
         self.plot_depot3 = self.reset_state.depot_xy[batch][2].tolist()  # third depot coordinates
@@ -173,7 +200,7 @@ class OPTester:
         self.plot_prize = self.reset_state.node_prize[batch].tolist()
         self.plot_size = [i * 100 for i in self.plot_prize]
         self.plot_nodes = np.array(self.plot_nodes)
-        # print(f'prizes : {self.plot_prize}')
+
         # Plot the nodes
         plt.scatter(self.plot_nodes[:, 0], self.plot_nodes[:, 1], color='Gray', s = self.plot_size )
         for i, node in enumerate(self.plot_nodes):
@@ -194,10 +221,13 @@ class OPTester:
         self.plot_nodes = self.reset_state.node_xy[batch].tolist()
         self.plot_depot = self.reset_state.depot_xy[batch].tolist()
         self.plot_nodes_depot = self.plot_depot + self.plot_nodes
-        for i in range(len(self.plot_path) - 1):
+        
+        # for i in range(len(self.plot_path) - 1):
+        plot_list = plot_paths[best_hotel_order]
+        for i in range(len(plot_list) - 1):
 
-            start = self.plot_nodes_depot[self.plot_path[i] ]
-            end = self.plot_nodes_depot[self.plot_path[i + 1] ]
+            start = self.plot_nodes_depot[plot_list[i] ]
+            end = self.plot_nodes_depot[plot_list[i + 1] ]
             if start == end :
                 continue
             
@@ -212,7 +242,34 @@ class OPTester:
         # plt.show()       
 
         plt.savefig('my_plot.png', dpi=300)
+
 if __name__ == '__main__' : 
-    self = OPTester(env_params=env_params, model_params=model_params, tester_params=tester_params)
-    self.run(batch_size=1)
-    self.plot(batch=0,best_result= True)    
+    
+    best_rewards = {}
+    plot_paths = {}
+
+    # hotel_order = 12
+    # self = OPTester(env_params=env_params, model_params=model_params, tester_params=tester_params)
+    # self.run(batch_size=1)
+
+    for hotel_order in range((4*4)):
+        self = OPTester(env_params=env_params, model_params=model_params, tester_params=tester_params)
+        self.run(batch_size=1)
+        
+    best_hotel_order = max(best_rewards, key=best_rewards.get)
+    best_reward = best_rewards[best_hotel_order]
+
+    points = [0, 1, 2, 3]  # points 0, 1, 2, 3
+    all_states_list = [[0, i, j, 1] for i in points for j in points]
+    best_state = all_states_list[best_hotel_order]
+
+    print("\nBest rewards for each hotel order:")
+    for hotel_order, reward in best_rewards.items():
+        print(f"Hotel order {hotel_order}: {all_states_list[hotel_order]} reward: {reward}")
+    
+    # Print the corresponding plot_path
+    print(f"\nBest hotel order is: {best_hotel_order} with hotel {best_state} visited and reward = {best_reward}")
+    print(f"Plot path for best hotel order: {plot_paths[best_hotel_order]}")
+
+
+    self.plot(batch=0,best_result= True) 

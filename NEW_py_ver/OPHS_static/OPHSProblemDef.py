@@ -4,7 +4,7 @@ import numpy as np
 
 def get_random_problems(batch_size, problem_size):
  
-    depot_xy = torch.rand(size=(batch_size, 4 ,2))
+    depot_xy = torch.rand(size=(batch_size, 7 ,2))
 
     node_xy = torch.rand(size=(batch_size, problem_size, 2))
     node_prize = torch.randint(1, 10, size=(batch_size, problem_size))

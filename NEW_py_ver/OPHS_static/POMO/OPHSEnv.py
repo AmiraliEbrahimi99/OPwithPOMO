@@ -78,7 +78,7 @@ class OPHSEnv:
         self.reset_state = Reset_state()
         self.step_state = Step_state()
 
-    def use_saved_problems(self, filename, device):             
+    def use_saved_problems(self, filename, device, hotel_swap: bool = False, order: int=0):             
         self.FLAG__use_saved_problems = True
 
         loaded_dict = torch.load(filename, map_location=device)
@@ -88,12 +88,30 @@ class OPHSEnv:
         self.saved_remain_len_number = loaded_dict['remain_len']
         self.saved_index = 0    
 
+        if hotel_swap:
+            coords = self.saved_depot_xy.squeeze(0)
+
+            points = [0, 1, 2, 3]  # points 0, 1, 2, 3
+            all_states = []
+            for point2 in points:
+                for point3 in points:
+                    state = [0, point2, point3, 1]
+                    all_states.append(state)
+
+            all_coordinates = []
+            for state in all_states:
+                coordinates = coords[state, :]
+                all_coordinates.append(coordinates)
+
+            all_coordinates_tensor = torch.stack(all_coordinates)
+            self.saved_depot_xy = all_coordinates_tensor[order].unsqueeze(0)
+
     def load_problems(self, batch_size, aug_factor=1) : 
         self.batch_size = batch_size
         
         if not self.FLAG__use_saved_problems:
             depot_xy, node_xy, node_prize = get_random_problems(batch_size, self.problem_size)
-            remain_len_number = 1.5                                                                          #define remaining length
+            remain_len_number = 1                                                                          #define remaining length
         else:
             depot_xy = self.saved_depot_xy[self.saved_index:self.saved_index+batch_size]
             node_xy = self.saved_node_xy[self.saved_index:self.saved_index+batch_size]
@@ -116,7 +134,7 @@ class OPHSEnv:
                 
         self.depot_node_xy = torch.cat((self.depot_xy, self.node_xy), dim=1)
         # shape: (batch, problem+2, 2)
-        depot_prize = torch.zeros(size=(self.batch_size, 4))                            #@chanage
+        depot_prize = torch.zeros(size=(self.batch_size, 7))                            #@chanage
         # shape: (batch, 2)
         self.depot_node_prize = torch.cat((depot_prize, node_prize), dim=1)
         # shape: (batch, problem+2)
@@ -144,9 +162,9 @@ class OPHSEnv:
         # shape: (batch, pomo)
         self.remaining_len = self.remain_len_number*torch.ones(size=(self.batch_size, self.pomo_size))               
         # shape: (batch, pomo)
-        self.visited_ninf_flag = torch.zeros(size=(self.batch_size, self.pomo_size, self.problem_size+4))       #@chanage
+        self.visited_ninf_flag = torch.zeros(size=(self.batch_size, self.pomo_size, self.problem_size+7))       #@chanage
         # shape: (batch, pomo, problem+2)
-        self.ninf_mask = torch.zeros(size=(self.batch_size, self.pomo_size, self.problem_size+4))               #@chanage
+        self.ninf_mask = torch.zeros(size=(self.batch_size, self.pomo_size, self.problem_size+7))               #@chanage
         # shape: (batch, pomo, problem+2)
         self.finished = torch.zeros(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
         # shape: (batch, pomo)
@@ -154,7 +172,7 @@ class OPHSEnv:
         # shape: (batch, pomo)
         self.day_finished = torch.zeros(size=(self.batch_size, self.pomo_size), dtype=torch.int64)             #@chanage                           #TOP
         #shape: (batch, pomo)
-        self.depots_ninf_mask = torch.zeros(size=(self.batch_size, self.pomo_size, 4))             #new 
+        self.depots_ninf_mask = torch.zeros(size=(self.batch_size, self.pomo_size, 7))             #new 
         #shape: (batch, pomo, 4)
         self.depots_ninf_mask[:, :, :] = float('-inf')
         self.flag = True
@@ -253,7 +271,7 @@ class OPHSEnv:
         self.len_too_large = self.remaining_len_expanded + round_error_epsilon < self.possible_dists
         # shape: (batch, pomo, problem)
 
-        self.len_too_large_expanded = torch.cat((torch.zeros_like(self.len_too_large[:,:,:4], dtype=torch.bool), self.len_too_large), dim=-1)       #@chanage
+        self.len_too_large_expanded = torch.cat((torch.zeros_like(self.len_too_large[:,:,:7], dtype=torch.bool), self.len_too_large), dim=-1)       #@chanage
         # shape: (batch, pomo, problem+2) 
         self.ninf_mask[self.len_too_large_expanded] = float('-inf')
         # shape: (batch, pomo, problem+2)
@@ -283,7 +301,7 @@ class OPHSEnv:
         if self.finished.all() :
             self.day_finished += 1
             self.finished[:, :] = False
-            self.remaining_len[:,:] = 1.5 # reset length at the depot
+            self.remaining_len[:,:] = 1 # reset length at the depot
             self.depots_ninf_mask[:, :, :] = float('-inf')
             self.flag = True
             # self.finishing_depot_index[self.finishing_depot_index < 3] += 1
@@ -295,7 +313,7 @@ class OPHSEnv:
             self.depots_ninf_mask[:, :, self.finishing_depot_index] = 0             ################### just added
             self.depots_ninf_mask[self.ninf_mask_first_step, :] = -float('inf')                           
             # print(f'\n{self.visited_ninf_flag}\n')
-            self.visited_ninf_flag[:, :, :4] = self.depots_ninf_mask
+            self.visited_ninf_flag[:, :, :7] = self.depots_ninf_mask
             self.flag = False
             
         # print(f'{self.finishing_depot_index}')

@@ -39,7 +39,7 @@ class OPHSModel(nn.Module):
             prob = torch.ones(size=(batch_size, pomo_size))
 
         elif state.selected_count == 1:  # Second Move, POMO
-            selected = torch.arange(start=4, end=pomo_size+4)[None, :].expand(batch_size, pomo_size)        #change
+            selected = torch.arange(start=7, end=pomo_size+7)[None, :].repeat(batch_size, 1)        #change
             selected[state.finished] = 0                                                                    #new condition
             prob = torch.ones(size=(batch_size, pomo_size))
 
