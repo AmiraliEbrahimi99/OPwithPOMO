@@ -2,11 +2,12 @@ from dataclasses import dataclass
 import torch
 from OPHSProblemDef import get_random_problems, augment_xy_data_by_8_fold
 
-
 @dataclass 
 class Reset_state : 
     depot_xy: torch.Tensor = None
-    # shape: (batch, 2, 2)
+    # shape: (batch, hotel, 2)
+    trip_length: torch.Tensor = None
+    # shape: (batch, day, 1)
     node_xy : torch.Tensor = None
     # shape: (batch, problem, 2)
     node_prize : torch.Tensor = None
@@ -17,7 +18,9 @@ class Step_state :
     BATCH_IDX: torch.Tensor = None
     POMO_IDX: torch.Tensor = None
     # shape: (batch, pomo)
-    
+    HOTEL_IDX: torch.Tensor = None                                  #new IDX for hotel
+    # shape: (batch, pomo, hotel)
+
     current_node: torch.Tensor = None
     selected_count: int = None
     remaining_len : torch.Tensor = None
@@ -33,7 +36,9 @@ class OPHSEnv:
         ####################################       
         self.env_params = env_params
         self.problem_size = env_params['problem_size']
-        self.pomo_size = env_params['pomo_size'] 
+        self.pomo_size = env_params['pomo_size']
+        self.hotel_size = env_params['hotel_size']                      # new input
+        self.day_number = env_params['day_number']                      # new input
         
         self.FLAG__use_saved_problems = False
         self.saved_depot_xy = None
@@ -46,11 +51,13 @@ class OPHSEnv:
         self.batch_size = None
         self.BATCH_IDX = None
         self.POMO_IDX = None
+        self.HOTEL_IDX = None
+
         # IDX.shape: (batch, pomo)
         self.depot_node_xy = None
-        # shape: (batch, problem+2 , 2)
+        # shape: (batch, problem+hotel , 2)
         self.depot_node_prize = None
-        # shape: (batch, problem+2)
+        # shape: (batch, problem+hotel)
         
         # Dynamic-1
         ####################################
@@ -67,9 +74,9 @@ class OPHSEnv:
         self.remaining_len = None
         # shape: (batch, pomo)
         self.visited_ninf_flag = None
-        # shape: (batch, pomo, problem+2)
+        # shape: (batch, pomo, problem+hotel)
         self.ninf_mask = None
-        # shape: (batch, pomo, problem+2)
+        # shape: (batch, pomo, problem+hotel)
         self.finished = None
         # shape: (batch, pomo)
         
@@ -85,41 +92,40 @@ class OPHSEnv:
         self.saved_depot_xy = loaded_dict['depot_xy']
         self.saved_node_xy = loaded_dict['node_xy']
         self.saved_node_prize = loaded_dict['node_prize']
-        self.saved_remain_len_number = loaded_dict['remain_len']
+        self.saved_remain_len = loaded_dict['remain_len']
         self.saved_index = 0    
 
-        if hotel_swap:
-            coords = self.saved_depot_xy.squeeze(0)
+        # if hotel_swap:
+        #     coords = self.saved_depot_xy.squeeze(0)
 
-            points = [0, 1, 2, 3]  # points 0, 1, 2, 3
-            all_states = []
-            for point2 in points:
-                for point3 in points:
-                    state = [0, point2, point3, 1]
-                    all_states.append(state)
+        #     points = [0, 1, 2, 3]  # points 0, 1, 2, 3
+        #     all_states = []
+        #     for point2 in points:
+        #         for point3 in points:
+        #             state = [0, point2, point3, 1]
+        #             all_states.append(state)
 
-            all_coordinates = []
-            for state in all_states:
-                coordinates = coords[state, :]
-                all_coordinates.append(coordinates)
+        #     all_coordinates = []
+        #     for state in all_states:
+        #         coordinates = coords[state, :]
+        #         all_coordinates.append(coordinates)
 
-            all_coordinates_tensor = torch.stack(all_coordinates)
-            self.saved_depot_xy = all_coordinates_tensor[order].unsqueeze(0)
+        #     all_coordinates_tensor = torch.stack(all_coordinates)
+        #     self.saved_depot_xy = all_coordinates_tensor[order].unsqueeze(0)
 
     def load_problems(self, batch_size, aug_factor=1) : 
         self.batch_size = batch_size
         
         if not self.FLAG__use_saved_problems:
-            depot_xy, node_xy, node_prize = get_random_problems(batch_size, self.problem_size)
-            remain_len_number = 1                                                                          #define remaining length
+            depot_xy, node_xy, node_prize, trip_length = get_random_problems(batch_size, self.problem_size, self.hotel_size, self.day_number)   # new trip length value
         else:
             depot_xy = self.saved_depot_xy[self.saved_index:self.saved_index+batch_size]
             node_xy = self.saved_node_xy[self.saved_index:self.saved_index+batch_size]
             node_prize = self.saved_node_prize[self.saved_index:self.saved_index+batch_size]
-            remain_len_number = self.saved_remain_len_number
+            trip_length = self.saved_remain_len[self.saved_index:self.saved_index+batch_size]
             self.saved_index += batch_size
        
-        self.remain_len_number = remain_len_number
+        # self.trip_length = trip_length
         self.depot_xy = depot_xy
         self.node_xy = node_xy
 
@@ -133,22 +139,27 @@ class OPHSEnv:
                 raise NotImplementedError
                 
         self.depot_node_xy = torch.cat((self.depot_xy, self.node_xy), dim=1)
-        # shape: (batch, problem+2, 2)
-        depot_prize = torch.zeros(size=(self.batch_size, 7))                            #@chanage
-        # shape: (batch, 2)
+        # shape: (batch, problem+hotel, 2)
+        depot_prize = torch.zeros(size=(self.batch_size, self.hotel_size))                            
+        # shape: (batch, hotel)
         self.depot_node_prize = torch.cat((depot_prize, node_prize), dim=1)
-        # shape: (batch, problem+2)
-    
+        # shape: (batch, problem+hotel)
+
+        self.trip_length = trip_length.squeeze(2)
+        # shape: (batch, day)
         
         self.BATCH_IDX = torch.arange(self.batch_size)[:, None].expand(self.batch_size, self.pomo_size)
         self.POMO_IDX = torch.arange(self.pomo_size)[None, :].expand(self.batch_size, self.pomo_size)
+        self.HOTEL_IDX = torch.arange(self.hotel_size)[None, None, :].expand(self.batch_size, self.pomo_size, self.hotel_size)      # new IDX to use in OPHSmodel
 
         self.reset_state.depot_xy = self.depot_xy
         self.reset_state.node_xy = self.node_xy
         self.reset_state.node_prize = node_prize
+        self.reset_state.trip_length = trip_length
         
         self.step_state.BATCH_IDX = self.BATCH_IDX
         self.step_state.POMO_IDX = self.POMO_IDX
+        self.step_state.HOTEL_IDX = self.HOTEL_IDX
         
     def reset(self) : 
         self.selected_count = 0
@@ -160,20 +171,23 @@ class OPHSEnv:
         # shape: (batch, pomo)
         self.ninf_mask_first_step = torch.zeros(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
         # shape: (batch, pomo)
-        self.remaining_len = self.remain_len_number*torch.ones(size=(self.batch_size, self.pomo_size))               
+        self.remaining_len = torch.ones(size=(self.batch_size, self.pomo_size))               
         # shape: (batch, pomo)
-        self.visited_ninf_flag = torch.zeros(size=(self.batch_size, self.pomo_size, self.problem_size+7))       #@chanage
-        # shape: (batch, pomo, problem+2)
-        self.ninf_mask = torch.zeros(size=(self.batch_size, self.pomo_size, self.problem_size+7))               #@chanage
-        # shape: (batch, pomo, problem+2)
+        self.visited_ninf_flag = torch.zeros(size=(self.batch_size, self.pomo_size, self.problem_size + self.hotel_size))      
+        # shape: (batch, pomo, problem+hotel)
+        self.ninf_mask = torch.zeros(size=(self.batch_size, self.pomo_size, self.problem_size + self.hotel_size))               
+        # shape: (batch, pomo, problem+hotel)
         self.finished = torch.zeros(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
         # shape: (batch, pomo)
         self.collected_prize = torch.zeros(size=(self.batch_size, self.pomo_size))
         # shape: (batch, pomo)
-        self.day_finished = torch.zeros(size=(self.batch_size, self.pomo_size), dtype=torch.int64)             #@chanage                           #TOP
+        
+        self.day_finished = torch.zeros(size=(self.batch_size, self.pomo_size), dtype=torch.int64)              # 5 new tensors        
         #shape: (batch, pomo)
-        self.depots_ninf_mask = torch.zeros(size=(self.batch_size, self.pomo_size, 7))             #new 
-        #shape: (batch, pomo, 4)
+        self.zeros_to_add = torch.zeros(self.batch_size, 1)  
+        # shape: (batch, 1)  
+        self.depots_ninf_mask = torch.zeros(size=(self.batch_size, self.pomo_size, self.day_number+1))             #new 
+        #shape: (batch, pomo, day)
         self.depots_ninf_mask[:, :, :] = float('-inf')
         self.flag = True
         self.finishing_depot_index = 1
@@ -212,9 +226,12 @@ class OPHSEnv:
         # shape: (batch, pomo, 0~)
 
         self.len_to_starting_depot, self.len_to_finishing_depot = self.calculate_len_to_depot()
-        # shape: (batch, pomo)
+        # shape len_to_start: (batch, pomo)
+        # shape len_to_finish: (batch, hotel, pomo)
 
-        if self.selected_count == 1 :                     #first step 
+        self.remaining_len[self.selected_count == 1] = self.trip_length[:, None, 0]             # Assign length for the first hotel (first step)       
+        
+        if self.selected_count == 1 :                     #first step(pomo) mask
             self.first_step_len_too_large = (self.remaining_len < self.len_to_starting_depot + self.len_to_finishing_depot)          #infeasible first step condition
             self.ninf_mask_first_step[self.first_step_len_too_large] = True
             # shape: (batch, pomo)
@@ -224,12 +241,11 @@ class OPHSEnv:
 
         # Dynamic-2
         ####################################
-        # print(f'{self.starting_depot_index}\n{self.finished}')
+
         self.at_the_depot = (selected == (self.finishing_depot_index))                   #change
-        # self.at_the_depot = (selected >= 0) & (selected <= 3)
-        # print(f'\n{selected}\n')
+   
         self.prize_list = self.depot_node_prize[:, None, :].expand(self.batch_size, self.pomo_size, -1)
-        # shape: (batch, pomo, problem+2)
+        # shape: (batch, pomo, problem+hotel)
         self.gathering_index = selected[:, :, None]
         # shape: (batch, pomo, 1)
         self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
@@ -241,20 +257,11 @@ class OPHSEnv:
 
         self.remaining_len -= selected_len
 
-        # self.day_finished[self.at_the_depot] += 1   
-        # print(f'{self.day_finished}')                                                                  #@chanage
-        # self.remaining_len[self.at_the_depot & (self.day_finished < 4)] = 1.5 # reset length at the depot             #@chanage       #TOP
-        
-        # if (self.at_the_depot).any():
-        #     self.visited_ninf_flag[:, :, :4] = True
-        #     self.visited_ninf_flag[:, range(self.pomo_size), self.starting_depot_index] = False
-        #     self.visited_ninf_flag[:, range(self.pomo_size), self.starting_depot_index + 1] = False
-        
-        # self.starting_depot_index[self.at_the_depot & (self.day_finished < 3)] += 1
-  
+        # print(f'\n\n remaining len: {self.remaining_len}')
+        # print(f'\n\nselected: {self.selected_node_list} \nmask: {self.ninf_mask}\n remaining len: {self.remaining_len}')
 
         self.visited_ninf_flag[self.BATCH_IDX, self.POMO_IDX, selected] = float('-inf')
-        # shape: (batch, pomo, problem+2)
+        # shape: (batch, pomo, problem+hotel)
         self.visited_ninf_flag[:, :, self.finishing_depot_index][~self.at_the_depot & ~self.ninf_mask_first_step] = 0  # depot 2 !!!! is considered unvisited, unless you are AT the depot       #@chanage tu code ghabli ino hazv kon bbin chi mishe
 
         self.ninf_mask = self.visited_ninf_flag.clone()
@@ -271,13 +278,12 @@ class OPHSEnv:
         self.len_too_large = self.remaining_len_expanded + round_error_epsilon < self.possible_dists
         # shape: (batch, pomo, problem)
 
-        self.len_too_large_expanded = torch.cat((torch.zeros_like(self.len_too_large[:,:,:7], dtype=torch.bool), self.len_too_large), dim=-1)       #@chanage
-        # shape: (batch, pomo, problem+2) 
+        self.len_too_large_expanded = torch.cat((torch.zeros_like(self.len_too_large[:,:,:self.hotel_size], dtype=torch.bool), self.len_too_large), dim=-1)       #@chanage
+        # shape: (batch, pomo, problem+hotel) 
         self.ninf_mask[self.len_too_large_expanded] = float('-inf')
-        # shape: (batch, pomo, problem+2)
-        
-        # print(f'selected: {self.selected_node_list}\n')
-        # print(f'maskkkk: {self.ninf_mask}\n remaining: {self.remaining_len}\n')
+        # shape: (batch, pomo, problem+hotel)
+
+
 
         self.newly_finished = (self.ninf_mask == float('-inf')).all(dim=2)
         # shape: (batch, pomo)
@@ -287,54 +293,62 @@ class OPHSEnv:
         # do not mask finishing depot for finished episode.
         self.ninf_mask[:, :, self.finishing_depot_index][self.finished & ~self.ninf_mask_first_step] = 0     #@chanage hotel number
         
-        # self.ninf_mask[self.ninf_mask_first_step, :] = -float('inf')                           
         self.ninf_mask[:, :, 0][self.finished & self.ninf_mask_first_step] = 0      #first step masking  
-       
-
-
-        # print(f'{selected}')
-        # print(f'{self.visited_ninf_flag}')
-        # print(f'selected: {selected_len} remaining{self.remaining_len}')
-        # time.sleep(2)
-        
-        # print(f'\n{self.finished}\n')
+    
         if self.finished.all() :
             self.day_finished += 1
             self.finished[:, :] = False
-            self.remaining_len[:,:] = 1 # reset length at the depot
+            # self.remaining_len[:,:] = 1.5 # reset length at the depot
             self.depots_ninf_mask[:, :, :] = float('-inf')
             self.flag = True
-            # self.finishing_depot_index[self.finishing_depot_index < 3] += 1
+
+
+            reward_mask = self.remaining_len < 0                                        #negative reward
+
+            #length_reset
+    
+            # self.hotel_order = torch.clamp(self.hotel_order, max=self.day_number)        
+
+            self.trip_length = torch.cat((self.trip_length, self.zeros_to_add), dim=1)  
+            # shape: (batch, day + 0~)
+            self.gathering_index_day = self.day_finished.unsqueeze(-1)
+            # shape: (batch, pomo, 1)  
+            trip_length_expanded = self.trip_length.unsqueeze(1).expand(-1, self.pomo_size, -1)
+            # shape: (batch, pomo, day)  
+            self.trip_length_extracted = trip_length_expanded.gather(2, self.gathering_index_day).squeeze(-1)
+            # shape: (batch, pomo)
+            mask = self.at_the_depot & (self.day_finished < self.day_number)                                        # mask for length reset
+            self.remaining_len[mask] = self.trip_length_extracted[mask] 
+            
+
             # print(f'################################### End of day = {self.day_finished} ###########################\n\n')
-            if self.finishing_depot_index < 3:
+            if self.finishing_depot_index < self.day_number:
                 self.finishing_depot_index += 1
 
         if self.flag:
-            self.depots_ninf_mask[:, :, self.finishing_depot_index] = 0             ################### just added
-            self.depots_ninf_mask[self.ninf_mask_first_step, :] = -float('inf')                           
-            # print(f'\n{self.visited_ninf_flag}\n')
-            self.visited_ninf_flag[:, :, :7] = self.depots_ninf_mask
+            self.depots_ninf_mask[:, :, self.finishing_depot_index] = 0             
+            self.depots_ninf_mask[self.ninf_mask_first_step, :] = float('-inf')
+            hotel_mask = torch.cat((self.depots_ninf_mask, torch.full((self.batch_size,self.pomo_size,self.hotel_size-self.day_number-1), float('-inf'))), dim=2)    
+            self.visited_ninf_flag[:, :, :self.hotel_size] = hotel_mask
             self.flag = False
-            
-        # print(f'{self.finishing_depot_index}')
-        # self.ninf_mask_first_step_expanded = self.ninf_mask_first_step.unsqueeze(2).expand(-1, -1, 4)
-        # self.ninf_mask[:, :, :4] = self.depots_ninf_mask
-        # print(f'\n visited:{self.visited_ninf_flag}')
-        # time.sleep(1)
+
 
         self.step_state.selected_count = self.selected_count
         self.step_state.remaining_len = self.remaining_len
         self.step_state.current_node = self.current_node
         self.step_state.ninf_mask = self.ninf_mask
         self.step_state.finished = self.finished
-        # print(f'\n{self.step_state.selected_count}{self.step_state.remaining_len}{self.step_state.current_node}{self.step_state.ninf_mask}{self.step_state.finished}\n')
+
+
         # returning values
         # done = self.finished.all()
-        done = (self.day_finished >= 3).all()
+        done = (self.day_finished >= self.day_number).all()
         if done:
+            # print(f'\n#################################################################\nreward befor chnage: {self.collected_prize}\n')               # for viewing original prizes
+            self.collected_prize[reward_mask] = (self.remaining_len[reward_mask]*1000.00) / self.collected_prize[reward_mask]
+
             reward = self.collected_prize
-            # print(f'\n########selected nodes######## \n{self.selected_node_list}\n##############reward######### \n{reward}')    #for testing
-            # print(f'{self.remaining_len}########selected nodes######## \n{self.selected_node_list}\n')    #for testing
+            # print(f'########selected nodes######## \n{self.selected_node_list}\n\n########trip length#######\n{self.trip_length}\n\n######final reward#####\n{reward}')    #for testing
         else:
             reward = None
 

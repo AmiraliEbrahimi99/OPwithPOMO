@@ -13,11 +13,11 @@ class OPHSModel(nn.Module):
         self.encoder = OPHS_Encoder(**model_params)
         self.decoder = OPHS_Decoder(**model_params)
         self.encoded_nodes = None
-        # shape: (batch, problem+2, EMBEDDING_DIM)
+        # shape: (batch, problem+hotel, EMBEDDING_DIM)
 
     def pre_forward(self, reset_state):
             depot_xy = reset_state.depot_xy
-            # shape: (batch, 2, 2)
+            # shape: (batch, hotel, 2)
             node_xy = reset_state.node_xy
             # shape: (batch, problem, 2)
             node_prize = reset_state.node_prize
@@ -32,15 +32,15 @@ class OPHSModel(nn.Module):
     def forward(self, state):
         batch_size = state.BATCH_IDX.size(0)
         pomo_size = state.BATCH_IDX.size(1)
-
+        hotel_size = state.HOTEL_IDX.size(2)
 
         if state.selected_count == 0:  # First Move, depot
             selected = torch.zeros(size=(batch_size, pomo_size), dtype=torch.long)
             prob = torch.ones(size=(batch_size, pomo_size))
 
         elif state.selected_count == 1:  # Second Move, POMO
-            selected = torch.arange(start=7, end=pomo_size+7)[None, :].repeat(batch_size, 1)        #change
-            selected[state.finished] = 0                                                                    #new condition
+            selected = torch.arange(start=hotel_size, end=pomo_size+hotel_size)[None, :].repeat(batch_size, 1)        # new change for batch bug fix
+            selected[state.finished] = 0                                                                    
             prob = torch.ones(size=(batch_size, pomo_size))
 
         else:
