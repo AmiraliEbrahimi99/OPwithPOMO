@@ -7,7 +7,7 @@ warnings.filterwarnings("ignore", message="Use of masked_fill_ on expanded tenso
 
 # Machine Environment Config
 
-DEBUG_MODE = False
+DEBUG_MODE = True
 USE_CUDA = not DEBUG_MODE
 CUDA_DEVICE_NUM = 0
 
@@ -38,8 +38,8 @@ from OPHSTrainer import OPHSTrainer as Trainer
 env_params = {
     'problem_size': 30,
     'pomo_size': 30,
-    'day_number': 7,
-    'hotel_size': 3,
+    'day_number': 3,
+    'hotel_size': 7,
 }
 
 model_params = {
