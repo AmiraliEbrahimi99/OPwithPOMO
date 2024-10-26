@@ -38,8 +38,8 @@ from OPHSTrainer import OPHSTrainer as Trainer
 env_params = {
     'problem_size': 30,
     'pomo_size': 30,
-    'day_number': 3,
-    'hotel_size': 4,
+    'day_number': 7,
+    'hotel_size': 3,
 }
 
 model_params = {
@@ -59,7 +59,7 @@ optimizer_params = {
         'weight_decay': 1e-6
     },
     'scheduler': {
-        'milestones': [90,],
+        'milestones': [500,],
         'gamma': 0.1
     }
 }
@@ -67,7 +67,7 @@ optimizer_params = {
 trainer_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
-    'epochs': 100 ,
+    'epochs': 510 ,
     'train_episodes': 10*1000,
     'train_batch_size': 64,
     'prev_model_path': None,
@@ -93,7 +93,7 @@ trainer_params = {
 
 logger_params = {
     'log_file': {
-        'desc': 'train_ophs_static_test',
+        'desc': 'train_ophs_H7D3_510_static',
         'filename': 'run_log'
     }
 }
