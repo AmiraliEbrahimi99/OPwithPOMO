@@ -1,0 +1,83 @@
+# packages in environment at C:\Users\My PC\anaconda3\envs\op_rl:
+#
+# Name                    Version                   Build  Channel
+backcall                  0.2.0              pyhd3eb1b0_0
+blas                      1.0                         mkl
+ca-certificates           2023.12.12           haa95532_0
+certifi                   2022.12.7        py37haa95532_0
+colorama                  0.4.6            py37haa95532_0
+cudatoolkit               10.2.89              h74a9793_1
+cycler                    0.11.0             pyhd3eb1b0_0
+debugpy                   1.5.1            py37hd77b12b_0
+decorator                 5.1.1              pyhd3eb1b0_0
+entrypoints               0.4              py37haa95532_0
+flit-core                 3.6.0              pyhd3eb1b0_0
+fonttools                 4.38.0                   pypi_0    pypi
+freetype                  2.12.1               ha860e81_0
+giflib                    5.2.1                h8cc25b3_3
+icc_rt                    2022.1.0             h6049295_2
+icu                       58.2                 ha925a31_3
+intel-openmp              2023.1.0         h59b6b97_46320
+ipykernel                 6.15.2           py37haa95532_0
+ipython                   7.31.1           py37haa95532_1
+jedi                      0.18.1           py37haa95532_1
+jpeg                      9e                   h2bbff1b_1
+jupyter_client            7.4.9            py37haa95532_0
+jupyter_core              4.11.2           py37haa95532_0
+kiwisolver                1.4.4            py37hd77b12b_0
+lerc                      3.0                  hd77b12b_0
+libdeflate                1.17                 h2bbff1b_1
+libpng                    1.6.39               h8cc25b3_0
+libsodium                 1.0.18               h62dcd97_0
+libtiff                   4.5.1                hd77b12b_0
+libuv                     1.44.2               h2bbff1b_0
+libwebp                   1.3.2                hbc33d0d_0
+libwebp-base              1.3.2                h2bbff1b_0
+lz4-c                     1.9.4                h2bbff1b_0
+matplotlib                3.5.3                    pypi_0    pypi
+matplotlib-inline         0.1.6            py37haa95532_0
+mkl                       2020.2                      256
+mkl-service               2.3.0            py37h196d8e1_0
+mkl_fft                   1.2.0            py37h45dec08_0
+mkl_random                1.1.1            py37h47e9c7a_0
+nest-asyncio              1.5.6            py37haa95532_0
+ninja                     1.10.2               haa95532_5
+ninja-base                1.10.2               h6d14046_5
+numpy                     1.21.6                   pypi_0    pypi
+openssl                   1.1.1w               h2bbff1b_0
+packaging                 22.0             py37haa95532_0
+parso                     0.8.3              pyhd3eb1b0_0
+pickleshare               0.7.5           pyhd3eb1b0_1003
+pillow                    9.5.0                    pypi_0    pypi
+pip                       22.3.1           py37haa95532_0
+prompt-toolkit            3.0.36           py37haa95532_0
+psutil                    5.9.0            py37h2bbff1b_0
+pygments                  2.11.2             pyhd3eb1b0_0
+pyparsing                 3.0.9            py37haa95532_0
+pyqt                      5.9.2            py37hd77b12b_6
+python                    3.7.6                h60c2a47_2
+python-dateutil           2.8.2              pyhd3eb1b0_0
+pytorch                   1.7.0           py3.7_cuda102_cudnn7_0    pytorch
+pytz                      2022.7           py37haa95532_0
+pywin32                   305              py37h2bbff1b_0
+pyzmq                     23.2.0           py37hd77b12b_0
+qt                        5.9.7            vc14h73c81de_0
+setuptools                65.6.3           py37haa95532_0
+sip                       4.19.13          py37hd77b12b_0
+six                       1.16.0             pyhd3eb1b0_1
+sqlite                    3.41.2               h2bbff1b_0
+tk                        8.6.12               h2bbff1b_0
+torchaudio                0.7.0                      py37    pytorch
+torchvision               0.8.1                py37_cu102    pytorch
+tornado                   6.2              py37h2bbff1b_0
+traitlets                 5.7.1            py37haa95532_0
+typing_extensions         4.4.0            py37haa95532_0
+vc                        14.2                 h21ff451_1
+vs2015_runtime            14.27.29016          h5e58377_2
+wcwidth                   0.2.5              pyhd3eb1b0_0
+wheel                     0.38.4           py37haa95532_0
+wincertstore              0.2              py37haa95532_2
+xz                        5.4.5                h8cc25b3_0
+zeromq                    4.3.4                hd77b12b_0
+zlib                      1.2.13               h8cc25b3_0
+zstd                      1.5.5                hd43e919_0

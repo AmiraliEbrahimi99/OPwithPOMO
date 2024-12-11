@@ -3,6 +3,7 @@
 
 import os
 import sys
+from itertools import product
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, "..")  # for problem_def
@@ -44,6 +45,8 @@ from OPHSTester import OPHSTester as Tester
 env_params = {
     'problem_size': 30,
     'pomo_size': 30,
+    'hotel_size': 4,
+    'day_number': 3
 }
 
 model_params = {
@@ -72,7 +75,7 @@ tester_params = {
     'aug_batch_size': 400,
     'test_data_load': {
         'enable': True,
-        'filename': './random_problem_4test_NO2.pt',
+        'filename': './T1-65-2-3.pt',
         'hotel_swap': True
     },
 }
@@ -161,7 +164,7 @@ class OPTester:
             self.step_count += 1 
             selected, _ = self.model(state)
             # shape: (batch, pomo)
-            state, self.reward, done = self.env.step(selected)     
+            state, self.reward, self.prize_per_day, done = self.env.step(selected)     
             self.path[self.step_count] = selected
 
   
@@ -179,7 +182,14 @@ class OPTester:
         plot_paths[hotel_order] = self.plot_path
         best_rewards[hotel_order] = self.reward[batch, pomo]
 
+        # Display the prize amount accumulated between each checkpoint
+        # for i, difference in enumerate(self.prize_per_day):
+        #     print(f"Collected prize between hotel {i} and hotel {i+1}:\n{difference}")
 
+        # best_pomo = [prize[0, pomo] for prize in self.prize_per_day]
+        # # Display the collected values for best pomo at each checkpoint
+        # for i, value in enumerate(best_pomo):
+        #     print(f"Collected prize between hotel {i} and {i+1} for pomo={pomo}: {value}")
 
     def plot(self,batch : int = 0 , pomo : int = 0 , best_result : bool = False) :
         # print(f'\nwhole reawrds are {self.reward}\n')
@@ -243,8 +253,12 @@ class OPTester:
 
         plt.savefig('my_plot.png', dpi=300)
 
+
+
+
 if __name__ == '__main__' : 
     
+    day_numb = env_params['day_number'] # Number of days
     best_rewards = {}
     plot_paths = {}
 

@@ -89,29 +89,34 @@ class OPHSEnv:
         self.FLAG__use_saved_problems = True
 
         loaded_dict = torch.load(filename, map_location=device)
-        self.saved_depot_xy = loaded_dict['depot_xy']
+        self.saved_depot_xy = loaded_dict['hotel_xy']
         self.saved_node_xy = loaded_dict['node_xy']
         self.saved_node_prize = loaded_dict['node_prize']
         self.saved_remain_len = loaded_dict['remain_len']
-        self.saved_index = 0    
+        self.saved_index = 0   
 
-        # if hotel_swap:
-        #     coords = self.saved_depot_xy.squeeze(0)
+        if hotel_swap:
+            coords = self.saved_depot_xy.squeeze(0)
 
-        #     points = [0, 1, 2, 3]  # points 0, 1, 2, 3
-        #     all_states = []
-        #     for point2 in points:
-        #         for point3 in points:
-        #             state = [0, point2, point3, 1]
-        #             all_states.append(state)
+            total_states = self.hotel_size**(self.day_number)
+            if order >= total_states:
+                raise ValueError(f"Order {order} exceeds the total number of states {total_states}.")
 
-        #     all_coordinates = []
-        #     for state in all_states:
-        #         coordinates = coords[state, :]
-        #         all_coordinates.append(coordinates)
+            # Compute the state corresponding to the given order
+            state = [0]  # Start with the fixed start point
+            current_order = order
+            for _ in range(self.day_number-1):
+                point = current_order % self.hotel_size
+                state.append(point)
+                current_order //= self.hotel_size
+            state.append(1)  # Add the fixed end point
 
-        #     all_coordinates_tensor = torch.stack(all_coordinates)
-        #     self.saved_depot_xy = all_coordinates_tensor[order].unsqueeze(0)
+            # Ensure the sequence length matches hotel_size by appending 1s
+            while len(state) < self.hotel_size:
+                state.append(1)
+
+            # Extract coordinates for the computed state
+            self.saved_depot_xy = coords[state, :].unsqueeze(0)
 
     def load_problems(self, batch_size, aug_factor=1) : 
         self.batch_size = batch_size
@@ -189,6 +194,8 @@ class OPHSEnv:
         self.depots_ninf_mask = torch.zeros(size=(self.batch_size, self.pomo_size, self.day_number+1))             #new 
         #shape: (batch, pomo, day)
         self.depots_ninf_mask[:, :, :] = float('-inf')
+        self.prize_per_day = []
+        self.previous_prize = None
         self.flag = True
         self.finishing_depot_index = 1
         
@@ -296,15 +303,14 @@ class OPHSEnv:
         self.ninf_mask[:, :, 0][self.finished & self.ninf_mask_first_step] = 0      #first step masking  
     
         if self.finished.all() :
+
             self.day_finished += 1
             self.finished[:, :] = False
             # self.remaining_len[:,:] = 1.5 # reset length at the depot
             self.depots_ninf_mask[:, :, :] = float('-inf')
             self.flag = True
 
-
             reward_mask = self.remaining_len < 0                                        #negative reward
-
             #length_reset
     
             # self.hotel_order = torch.clamp(self.hotel_order, max=self.day_number)        
@@ -320,8 +326,15 @@ class OPHSEnv:
             mask = self.at_the_depot & (self.day_finished < self.day_number)                                        # mask for length reset
             self.remaining_len[mask] = self.trip_length_extracted[mask] 
             
+            #prize for each day
+            if self.previous_prize is None:
+                self.prize_per_day.append(self.collected_prize.clone())
+            else:
+                difference = self.collected_prize - self.previous_prize
+                self.prize_per_day.append(difference)
+            
+            self.previous_prize = self.collected_prize.clone()
 
-            # print(f'################################### End of day = {self.day_finished} ###########################\n\n')
             if self.finishing_depot_index < self.day_number:
                 self.finishing_depot_index += 1
 
@@ -344,7 +357,7 @@ class OPHSEnv:
         # done = self.finished.all()
         done = (self.day_finished >= self.day_number).all()
         if done:
-            # print(f'\n#################################################################\nreward befor chnage: {self.collected_prize}\n')               # for viewing original prizes
+            # print(f'\n#################################################################\nreward before chanage: {self.collected_prize}\n')               # for viewing original prizes
             self.collected_prize[reward_mask] = (self.remaining_len[reward_mask]*1000.00) / self.collected_prize[reward_mask]
 
             reward = self.collected_prize
@@ -352,6 +365,7 @@ class OPHSEnv:
         else:
             reward = None
 
+        # return self.step_state, reward, self.prize_per_day, done
         return self.step_state, reward, done
 
 
