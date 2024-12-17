@@ -6,8 +6,6 @@ from OPHSSPProblemDef import get_random_problems, augment_xy_data_by_8_fold
 class Reset_state : 
     depot_xy: torch.Tensor = None
     # shape: (batch, hotel, 2)
-    hotel_size: torch.Tensor = None
-    # shape: (batch, 1)
     day_number: torch.Tensor = None
     # shape: (batch, 1)
     trip_length: torch.Tensor = None
@@ -22,7 +20,7 @@ class Step_state :
     BATCH_IDX: torch.Tensor = None
     POMO_IDX: torch.Tensor = None
     # shape: (batch, pomo)
-    HOTEL_IDX: torch.Tensor = None                                  #new IDX for hotel
+    HOTEL_IDX: torch.Tensor = None                               
     # shape: (batch, pomo, hotel)
 
     current_node: torch.Tensor = None
@@ -41,6 +39,8 @@ class OPHSSPEnv:
         self.env_params = env_params
         self.problem_size = env_params['problem_size']
         self.pomo_size = env_params['pomo_size'] 
+        self.hotel_size = env_params['hotel_size']                   
+
         
         self.FLAG__use_saved_problems = False
         self.saved_depot_xy = None
@@ -92,7 +92,6 @@ class OPHSSPEnv:
 
         loaded_dict = torch.load(filename, map_location=device)
 
-        self.saved_hotel_size = loaded_dict['hotel_size']
         self.saved_day_number = loaded_dict['day_number']
         self.saved_depot_xy = loaded_dict['hotel_xy']
         self.saved_node_xy = loaded_dict['node_xy']
@@ -103,7 +102,7 @@ class OPHSSPEnv:
         if hotel_swap:
             coords = self.saved_depot_xy.squeeze(0)
 
-            total_states = self.saved_hotel_size**(self.saved_day_number)
+            total_states = self.hotel_size**(self.saved_day_number)
             if order >= total_states:
                 raise ValueError(f"Order {order} exceeds the total number of states {total_states}.")
 
@@ -111,13 +110,13 @@ class OPHSSPEnv:
             state = [0]  # Start with the fixed start point
             current_order = order
             for _ in range(self.saved_day_number-1):
-                point = current_order % self.saved_hotel_size
+                point = current_order % self.hotel_size
                 state.append(point)
-                current_order //= self.saved_hotel_size
+                current_order //= self.hotel_size
             state.append(1)  # Add the fixed end point
 
             # Ensure the sequence length matches hotel_size by appending 1s
-            while len(state) < self.saved_hotel_size:
+            while len(state) < self.hotel_size:
                 state.append(1)
 
             # Extract coordinates for the computed state
@@ -127,20 +126,18 @@ class OPHSSPEnv:
         self.batch_size = batch_size
         
         if not self.FLAG__use_saved_problems:
-            hotel_size, day_number, depot_xy, node_xy, node_prize, trip_length = get_random_problems(batch_size, self.problem_size)   # new trip length value
+            day_number, depot_xy, node_xy, node_prize, trip_length = get_random_problems(batch_size, self.problem_size, self.hotel_size)  
         else:
             depot_xy = self.saved_depot_xy[self.saved_index:self.saved_index+batch_size]
             node_xy = self.saved_node_xy[self.saved_index:self.saved_index+batch_size]
             node_prize = self.saved_node_prize[self.saved_index:self.saved_index+batch_size]
             trip_length = self.saved_remain_len[self.saved_index:self.saved_index+batch_size]
-            hotel_size = self.saved_hotel_size
             day_number = self.saved_day_number
             self.saved_index += batch_size
        
         # self.trip_length = trip_length
         self.depot_xy = depot_xy
         self.node_xy = node_xy
-        self.hotel_size = hotel_size
         self.day_number = day_number
 
         if aug_factor > 1:
@@ -164,11 +161,10 @@ class OPHSSPEnv:
         
         self.BATCH_IDX = torch.arange(self.batch_size)[:, None].expand(self.batch_size, self.pomo_size)
         self.POMO_IDX = torch.arange(self.pomo_size)[None, :].expand(self.batch_size, self.pomo_size)
-        self.HOTEL_IDX = self.hotel_size.repeat(1, self.pomo_size)
+        self.HOTEL_IDX = torch.arange(self.hotel_size)[None, None, :].expand(self.batch_size, self.pomo_size, self.hotel_size)      # new IDX to use in OPHSmodel
 
         self.reset_state.depot_xy = self.depot_xy
         self.reset_state.node_xy = self.node_xy
-        self.reset_state.hotel_size = self.hotel_size
         self.reset_state.day_number = self.day_number
         self.reset_state.node_prize = node_prize
         self.reset_state.trip_length = trip_length
@@ -197,12 +193,13 @@ class OPHSSPEnv:
         # shape: (batch, pomo)
         self.collected_prize = torch.zeros(size=(self.batch_size, self.pomo_size))
         # shape: (batch, pomo)
-        
         self.day_finished = torch.zeros(size=(self.batch_size, self.pomo_size), dtype=torch.int64)              # 5 new tensors        
         #shape: (batch, pomo)
         self.zeros_to_add = torch.zeros(self.batch_size, 1)  
         # shape: (batch, 1)  
-        self.depots_ninf_mask = torch.zeros(size=(self.batch_size, self.pomo_size, self.day_number+1))             #new 
+
+        self.max_day_number = self.day_number.max().item()
+        self.depots_ninf_mask = torch.zeros(size=(self.batch_size, self.pomo_size, self.max_day_number+1))             #new 
         #shape: (batch, pomo, day)
         self.depots_ninf_mask[:, :, :] = float('-inf')
         self.prize_per_day = []
@@ -363,9 +360,11 @@ class OPHSSPEnv:
         if self.flag:
             self.depots_ninf_mask[:, :, self.finishing_depot_index] = 0             
             self.depots_ninf_mask[self.ninf_mask_first_step, :] = float('-inf')
-            hotel_mask = torch.cat((self.depots_ninf_mask, torch.full((self.batch_size,self.pomo_size,self.hotel_size-self.day_number-1), float('-inf'))), dim=2)    
-            self.visited_ninf_flag[:, :, :self.hotel_size] = hotel_mask
+            depots_maske_adjusted = torch.nn.functional.pad(self.max_day_number, (0, max(0, self.hotel_size - (self.max_day_number + 1))), value=-float('inf'))[:, :, :self.hotel_size]
+            self.visited_ninf_flag[:, :, :self.hotel_size] = depots_maske_adjusted
             self.flag = False
+            # hotel_mask = torch.cat((self.depots_ninf_mask, torch.full((self.batch_size,self.pomo_size,self.hotel_size-self.day_number-1), float('-inf'))), dim=2)    
+            # self.visited_ninf_flag[:, :, :self.hotel_size] = hotel_mask
 
 
         self.step_state.selected_count = self.selected_count

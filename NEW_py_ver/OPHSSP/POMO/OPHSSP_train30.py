@@ -38,6 +38,7 @@ from OPHSSPTrainer import OPHSSPTrainer as Trainer
 env_params = {
     'problem_size': 32,
     'pomo_size': 32,
+    'hotel_size': 7,
 }
 
 model_params = {

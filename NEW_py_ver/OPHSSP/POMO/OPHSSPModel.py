@@ -18,12 +18,12 @@ class OPHSSPModel(nn.Module):
     def pre_forward(self, reset_state):
             depot_xy = reset_state.depot_xy
             # shape: (batch, hotel, 2)
-            hotel_size = reset_state.hotel_size
+            day_number = reset_state.day_number.unsqueeze(1).expand_as(depot_xy)
+            # shape: (batch, hotel, 1)
             # shape: (batch, 1)
-            day_number = reset_state.day_number
-            # shape: (batch, 1)
-            depot_xy_hotel_day = torch.cat((depot_xy, hotel_size.unsqueeze(1).expand(-1,hotel_size,-1), day_number.unsqueeze(1).expand(-1,hotel_size,-1)), dim=2) 
-            # shape: (batch, hotel, 4)
+            # print(reset_state.day_number , day_number[:,:,:1])
+            depot_xy_day = torch.cat((depot_xy, day_number[:,:,:1]), dim=2)
+            # # shape: (batch, 1, 3)
             node_xy = reset_state.node_xy
             # shape: (batch, problem, 2)
             node_prize = reset_state.node_prize
@@ -31,22 +31,21 @@ class OPHSSPModel(nn.Module):
             node_xy_prize = torch.cat((node_xy, node_prize), dim=2)  
             # shape: (batch, problem, 4)
 
-            self.encoded_nodes = self.encoder(depot_xy_hotel_day, node_xy_prize)
+            self.encoded_nodes = self.encoder(depot_xy_day, node_xy_prize)
             # shape: (batch, problem+2, embedding)
             self.decoder.set_kv(self.encoded_nodes)
 
     def forward(self, state):
         batch_size = state.BATCH_IDX.size(0)
         pomo_size = state.BATCH_IDX.size(1)
-        hotel_size = state.HOTEL_IDX
+        hotel_size = state.HOTEL_IDX.size(2)
 
         if state.selected_count == 0:  # First Move, depot
             selected = torch.zeros(size=(batch_size, pomo_size), dtype=torch.long)
             prob = torch.ones(size=(batch_size, pomo_size))
 
         elif state.selected_count == 1:  # Second Move, POMO
-            # selected = torch.arange(start=hotel_size, end=pomo_size+hotel_size)[None, :].repeat(batch_size, 1)        # new change for batch bug fix
-            selected = (torch.arange(start=0, end=pomo_size) + hotel_size)
+            selected = torch.arange(start=hotel_size, end=pomo_size+hotel_size)[None, :].repeat(batch_size, 1)        # new change for batch bug fix
             selected[state.finished] = 0                                                                    
             prob = torch.ones(size=(batch_size, pomo_size))
 
@@ -104,15 +103,15 @@ class OPHSSP_Encoder(nn.Module):
         embedding_dim = self.model_params['embedding_dim']
         encoder_layer_num = self.model_params['encoder_layer_num']
 
-        self.embedding_depot = nn.Linear(4, embedding_dim)
+        self.embedding_depot = nn.Linear(3, embedding_dim)
         self.embedding_node = nn.Linear(4, embedding_dim)  
         self.layers = nn.ModuleList([EncoderLayer(**model_params) for _ in range(encoder_layer_num)])
 
-    def forward(self, depot_xy_hotel_day, node_xy_prize):
-        # depot_xy.shape: (batch, hotel, 4)
+    def forward(self, depot_xy_day, node_xy_prize):
+        # depot_xy.shape: (batch, hotel, 3)
         # node_xy_prize.shape: (batch, problem, 4)
 
-        embedded_depot = self.embedding_depot(depot_xy_hotel_day)
+        embedded_depot = self.embedding_depot(depot_xy_day)
         # shape: (batch, hotel, embedding)
         embedded_node = self.embedding_node(node_xy_prize)
         # shape: (batch, problem, embedding)
