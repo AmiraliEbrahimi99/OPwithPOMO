@@ -2,18 +2,30 @@ import torch
 import numpy as np
 
 
-def get_random_problems(batch_size, problem_size, hotel_size, day_number):
+def get_random_problems(batch_size, problem_size, hotel_size):
  
     depot_xy = torch.rand(size=(batch_size, hotel_size ,2))
 
-    trip_length = 0.7 + (0.7 * torch.rand(batch_size, day_number, 1))      #0.7 to 1.4
-    # trip_length = 0.7 + (0.7 * torch.rand(batch_size, day_number))      #0.7 to 1.4
-    # trip_length = torch.ones(size=(batch_size, day_number, 1))         #for fixed trip length
-    
+    day_number = torch.randint(2 ,5 , size=(batch_size, 1))
+
+    if problem_size == 32:
+        t_max = 4 
+    elif problem_size == 64:
+        t_max = 0.8 
+    elif problem_size == 100:
+        t_max = 1
+    else:
+        raise NotImplementedError
+
+
+    trip_length = (t_max/day_number).unsqueeze(dim=1).expand(-1, day_number.max().item(), -1)
+    day_mask = torch.arange(day_number.max().item()).unsqueeze(0) < day_number  # Shape: (1, max_days) < (batch_size, 1)
+    trip_length = trip_length * day_mask.expand(batch_size, -1).unsqueeze(-1)  # Shape: (batch_size, max_days, 1)
+ 
     node_xy = torch.rand(size=(batch_size, problem_size, 2))
     node_prize = torch.randint(1, 10, size=(batch_size, problem_size))  # 1 to 9
     
-    return depot_xy, node_xy, node_prize, trip_length
+    return day_number, depot_xy, node_xy, node_prize, trip_length
 
 def augment_xy_data_by_8_fold(xy_data):
     # xy_data.shape: (batch, N, 2)

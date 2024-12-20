@@ -18,17 +18,15 @@ class OPHSModel(nn.Module):
     def pre_forward(self, reset_state):
             depot_xy = reset_state.depot_xy
             # shape: (batch, hotel, 2)
-            trip_length = reset_state.trip_length
-            # shape: (batch, day, 1)
             node_xy = reset_state.node_xy
             # shape: (batch, problem, 2)
             node_prize = reset_state.node_prize
             # shape: (batch, problem)
-            node_xy_prize = torch.cat((node_xy, node_prize[:, :, None]), dim=2)
-            # shape: (batch, problem, 3)
+            node_xy_prize = torch.cat((node_xy, node_prize[:,:,None]), dim=2)  
+            # shape: (batch, problem, 4)
 
-            self.encoded_nodes = self.encoder(depot_xy, node_xy_prize, trip_length)
-            # shape: (batch, problem+hotel+day, embedding)
+            self.encoded_nodes = self.encoder(depot_xy, node_xy_prize)
+            # shape: (batch, problem+hotel, embedding)
             self.decoder.set_kv(self.encoded_nodes)
 
     def forward(self, state):
@@ -99,27 +97,21 @@ class OPHS_Encoder(nn.Module):
         embedding_dim = self.model_params['embedding_dim']
         encoder_layer_num = self.model_params['encoder_layer_num']
 
-
-        self.embedding_length = nn.Linear(1, embedding_dim)
         self.embedding_depot = nn.Linear(2, embedding_dim)
         self.embedding_node = nn.Linear(3, embedding_dim)
         self.layers = nn.ModuleList([EncoderLayer(**model_params) for _ in range(encoder_layer_num)])
 
-    def forward(self, depot_xy, node_xy_prize, trip_length):
-        # trip_length.shape: (batch, day, 1)
+    def forward(self, depot_xy, node_xy_prize):
         # depot_xy.shape: (batch, hotel, 2)
         # node_xy_prize.shape: (batch, problem, 3)
 
-        #@ todo: add normaliztion for this
-        embedded_length = self.embedding_length(trip_length)
-        # shape: (batch, day, embedding)
         embedded_depot = self.embedding_depot(depot_xy)
         # shape: (batch, hotel, embedding)
         embedded_node = self.embedding_node(node_xy_prize)
         # shape: (batch, problem, embedding)
 
-        out = torch.cat((embedded_depot, embedded_node,embedded_length), dim=1)
-        # shape: (batch, problem+hotel+day, embedding)
+        out = torch.cat((embedded_depot, embedded_node), dim=1)
+        # shape: (batch, problem+hotel, embedding)
 
         for layer in self.layers:
             out = layer(out)

@@ -6,6 +6,8 @@ from OPHSProblemDef import get_random_problems, augment_xy_data_by_8_fold
 class Reset_state : 
     depot_xy: torch.Tensor = None
     # shape: (batch, hotel, 2)
+    day_number: torch.Tensor = None
+    # shape: (batch, 1)
     trip_length: torch.Tensor = None
     # shape: (batch, day, 1)
     node_xy : torch.Tensor = None
@@ -36,9 +38,9 @@ class OPHSEnv:
         ####################################       
         self.env_params = env_params
         self.problem_size = env_params['problem_size']
-        self.pomo_size = env_params['pomo_size']
-        self.hotel_size = env_params['hotel_size']                      # new input
-        self.day_number = env_params['day_number']                      # new input
+        self.pomo_size = env_params['pomo_size'] 
+        self.hotel_size = env_params['hotel_size']                   
+
         
         self.FLAG__use_saved_problems = False
         self.saved_depot_xy = None
@@ -99,17 +101,19 @@ class OPHSEnv:
         self.batch_size = batch_size
         
         if not self.FLAG__use_saved_problems:
-            depot_xy, node_xy, node_prize, trip_length = get_random_problems(batch_size, self.problem_size, self.hotel_size, self.day_number)   # new trip length value
+            day_number, depot_xy, node_xy, node_prize, trip_length = get_random_problems(batch_size, self.problem_size, self.hotel_size)  
         else:
             depot_xy = self.saved_depot_xy[self.saved_index:self.saved_index+batch_size]
             node_xy = self.saved_node_xy[self.saved_index:self.saved_index+batch_size]
             node_prize = self.saved_node_prize[self.saved_index:self.saved_index+batch_size]
-            trip_length = self.saved_remaining_len[self.saved_index:self.saved_index+batch_size]
+            trip_length = self.saved_remain_len[self.saved_index:self.saved_index+batch_size]
+            day_number = self.saved_day_number
             self.saved_index += batch_size
        
         # self.trip_length = trip_length
         self.depot_xy = depot_xy
         self.node_xy = node_xy
+        self.day_number = day_number
 
         if aug_factor > 1:
             if aug_factor == 8:
@@ -136,6 +140,7 @@ class OPHSEnv:
 
         self.reset_state.depot_xy = self.depot_xy
         self.reset_state.node_xy = self.node_xy
+        self.reset_state.day_number = self.day_number
         self.reset_state.node_prize = node_prize
         self.reset_state.trip_length = trip_length
         
@@ -314,22 +319,18 @@ class OPHSEnv:
         self.step_state.selected_count = self.selected_count
         self.step_state.remaining_len = self.remaining_len
         self.step_state.current_node = self.current_node
+        self.step_state.ninf_mask = self.ninf_mask
         self.step_state.finished = self.finished
-        # Create a new tensor filled with -inf with the same batch and pomo but with the additional 'day' dimension  
-        negative_inf_tensor = torch.full((self.batch_size, self.pomo_size, self.day_number), float('-inf'))  
-        # Concatenate the original tensor with the new tensor along the last dimension  
-        result_mask_tensor = torch.cat((self.ninf_mask, negative_inf_tensor), dim=-1) 
-        
-        self.step_state.ninf_mask = result_mask_tensor
 
         done = self.finished.all()
         if done:
-            print(f'\n#################################################################\nreward befor chnage: {self.collected_prize}\n')               # for viewing original prizes
+            # print(f'\n#################################################################\nreward befor chnage: {self.collected_prize}\n')               # for viewing original prizes
             reward_mask = self.remaining_len < 0
             self.collected_prize[reward_mask] = (self.remaining_len[reward_mask]*1000.00) / self.collected_prize[reward_mask]
 
             reward = self.collected_prize
-            print(f'########selected nodes######## \n{self.selected_node_list}\n\n########trip length#######\n{self.trip_length}\n\n######final reward#####\n{reward}')    #for testing
+            # print(f'########selected nodes######## \n{self.selected_node_list}\n\n########trip length#######\n{self.trip_length}\n\n######final reward#####\n{reward}')    #for testing
+            # print(self.selected_node_list)
         else:
             reward = None
 
