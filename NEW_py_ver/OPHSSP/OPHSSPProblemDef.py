@@ -3,11 +3,12 @@ import torch
 def get_random_problems(batch_size, problem_size, hotel_size):
  
     # day_number = torch.full((batch_size, 1), 3)
-    day_number = torch.randint(2 ,5 , size=(batch_size, 1))
+    day_number = torch.randint(2 ,6 , size=(batch_size, 1))
 
 
+    # if problem_size == 32:
     if problem_size == 32:
-        t_max = 0.6 
+        t_max = 4 
     elif problem_size == 64:
         t_max = 0.8 
     elif problem_size == 100:

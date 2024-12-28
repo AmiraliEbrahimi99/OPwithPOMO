@@ -7,7 +7,7 @@ warnings.filterwarnings("ignore", message="Use of masked_fill_ on expanded tenso
 
 # Machine Environment Config
 
-DEBUG_MODE = True
+DEBUG_MODE = False
 USE_CUDA = not DEBUG_MODE
 CUDA_DEVICE_NUM = 0
 
