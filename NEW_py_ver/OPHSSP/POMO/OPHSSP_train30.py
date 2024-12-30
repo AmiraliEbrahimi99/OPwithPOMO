@@ -58,7 +58,7 @@ optimizer_params = {
         'weight_decay': 1e-6
     },
     'scheduler': {
-        'milestones': [500,],
+        'milestones': [90,],
         'gamma': 0.1
     }
 }
@@ -66,7 +66,7 @@ optimizer_params = {
 trainer_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
-    'epochs': 510 ,
+    'epochs': 100 ,
     'train_episodes': 10*1000,
     'train_batch_size': 64,
     'prev_model_path': None,
@@ -92,7 +92,7 @@ trainer_params = {
 
 logger_params = {
     'log_file': {
-        'desc': 'train_ophs_H7D3_510_static',
+        'desc': 'train_ophs_dynamic_day_H7_DD_fix_score',
         'filename': 'run_log'
     }
 }
@@ -121,8 +121,8 @@ def main():
 def _set_debug_mode():
     global trainer_params
     trainer_params['epochs'] = 1
-    trainer_params['train_episodes'] = 3
-    trainer_params['train_batch_size'] = 3
+    trainer_params['train_episodes'] = 1
+    trainer_params['train_batch_size'] = 1
 
 
 def _print_config():

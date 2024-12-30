@@ -151,7 +151,7 @@ class OPHSSPEnv:
                 
         self.depot_node_xy = torch.cat((self.depot_xy, self.node_xy), dim=1)
         # shape: (batch, problem+hotel, 2)
-        depot_prize = torch.zeros(size=(self.batch_size, self.hotel_size, 2))                            
+        depot_prize = torch.zeros(size=(self.batch_size, self.hotel_size))                            
         # shape: (batch, hotel, 2)
         self.depot_node_prize = torch.cat((depot_prize, node_prize), dim=1)
         # shape: (batch, problem+hotel, 2)
@@ -203,7 +203,8 @@ class OPHSSPEnv:
         self.max_day_number = self.day_number.max().item()
         self.depots_ninf_mask = torch.zeros(size=(self.batch_size, self.pomo_size, self.max_day_number+1))             #new 
         # shape: (batch, pomo, max_day)
-
+        self.end_day_flag = torch.zeros(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
+        # shape: (batch, pomo)
         self.finishing_depot_index = torch.ones(size=(self.batch_size, self.pomo_size), dtype= torch.long)
         # shape: (batch, pomo)
         self.batch_indices = torch.arange(self.batch_size).unsqueeze(1)  
@@ -262,26 +263,37 @@ class OPHSSPEnv:
         ####################################
         self.at_the_depot = (selected == (self.finishing_depot_index))                   #change
 
-        self.prize_list = self.depot_node_prize[:, None, :, :].expand(self.batch_size, self.pomo_size, -1, -1)
-        # shape: (batch, pomo, problem+hotel , 2)
-        self.gathering_index = selected[:, :, None, None].expand(-1, -1, 1, 2)
-        # shape: (batch, pomo, 1, 1)
+        # self.prize_list = self.depot_node_prize[:, None, :, :].expand(self.batch_size, self.pomo_size, -1, -1)
+        # # shape: (batch, pomo, problem+hotel , 2)
+        # self.gathering_index = selected[:, :, None, None].expand(-1, -1, 1, 2)
+        # # shape: (batch, pomo, 1, 1)
+        # self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
+        # # shape: (batch, pomo, 2)
+        # raw_rewards = torch.randn(self.batch_size, self.problem_size) * self.selected_prize[:,:,1] + self.selected_prize[:,:,0]
+
+        # non_zero_mask = raw_rewards != 0                                    # Clamp only the non-zero values
+        # node_prizes = raw_rewards.clone()
+        # node_prizes[non_zero_mask] = torch.clamp(torch.round(raw_rewards[non_zero_mask]), min=2, max=99)
+        # self.reward_tensor = node_prizes / 100                                      # Normalize by dividing by 100
+
+        # self.collected_prize += self.reward_tensor
+
+        self.prize_list = self.depot_node_prize[:, None, :].expand(self.batch_size, self.pomo_size, -1)
+        # shape: (batch, pomo, problem+hotel)
+        self.gathering_index = selected[:, :, None]
+        # shape: (batch, pomo, 1)
         self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
-        # shape: (batch, pomo, 2)
-        raw_rewards = torch.randn(self.batch_size, self.problem_size) * self.selected_prize[:,:,1] + self.selected_prize[:,:,0]
+        # shape: (batch, pomo)
 
-        non_zero_mask = raw_rewards != 0                                    # Clamp only the non-zero values
-        node_prizes = raw_rewards.clone()
-        node_prizes[non_zero_mask] = torch.clamp(torch.round(raw_rewards[non_zero_mask]), min=2, max=99)
-        self.reward_tensor = node_prizes / 100                                      # Normalize by dividing by 100
-
-        self.collected_prize += self.reward_tensor
+        self.collected_prize += self.selected_prize
 
         selected_len = self.calculate_two_distance()
 
         self.remaining_len -= selected_len
 
-        self.day_finished[self.selected_count > 1] += self.at_the_depot                                         # day count   
+        # self.end_day_flag = (self.ninf_mask[:, :, self.hotel_size:] == -float('inf')).all(dim=2) 
+        # # shape: (batch, pomo)
+        self.day_finished[self.selected_count > 1] += self.at_the_depot                                     # day count   
 
         self.finishing_depot_index = self.day_finished + 1 
         day_number_expanded = self.day_number.expand(-1, self.pomo_size)
@@ -306,7 +318,7 @@ class OPHSSPEnv:
         self.depots_ninf_mask[:, :, :] = float('-inf')
         hotel_mask = torch.cat([self.depots_ninf_mask, torch.full((self.batch_size, self.pomo_size, self.hotel_size - self.depots_ninf_mask.shape[-1]), float('-inf'))], dim=-1)
 
-        self.last_step_mask[(self.day_finished > self.day_number)] = True
+        self.last_step_mask[(self.day_finished >= self.day_number)] = True
         finish_mask = self.last_step_mask & self.at_the_depot                            
 
         batch_indices_flat_visited = self.batch_indices.expand_as(self.finished)[~finish_mask & ~self.ninf_mask_first_step]
@@ -345,7 +357,7 @@ class OPHSSPEnv:
         #     self.prize_per_day.append(difference)
 
         # self.previous_prize = self.collected_prize.clone()
-
+    
         self.newly_finished = (self.ninf_mask == float('-inf')).all(dim=2)
         # shape: (batch, pomo)
         self.finished = self.finished + self.newly_finished
@@ -377,6 +389,7 @@ class OPHSSPEnv:
             #     self.collected_prize.fill_(1e-7)
 
             reward = self.collected_prize
+            # print(self.selected_node_list.tolist())
             # print(self.selected_node_list)
         else:
             reward = None

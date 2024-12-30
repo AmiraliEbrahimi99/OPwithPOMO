@@ -48,10 +48,10 @@ from OPHSTester import OPHSTester as Tester
 # parameters
 
 env_params = {
-    'problem_size': 98,
-    'pomo_size': 98,
-    'hotel_size': 15,
-    'day_number': 8
+    'problem_size': 30,
+    'pomo_size': 30,
+    'hotel_size': 7,
+    'day_number': 3
 }
 
 model_params = {
@@ -70,8 +70,8 @@ tester_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
     'model_load': {
-        'path': './result/train_ophs_n30_with_instNorm_100_epoch_static_order',  # directory path of pre-trained model and log files saved.
-        'epoch': 100,  # epoch version of pre-trained model to laod.
+        'path': './result/ophs_H7D3_510_fixed_order',  # directory path of pre-trained model and log files saved.
+        'epoch': 510,  # epoch version of pre-trained model to laod.
     },
     'test_episodes': 10*1000,
     'test_batch_size': 1000,
@@ -80,7 +80,7 @@ tester_params = {
     'aug_batch_size': 400,
     'test_data_load': {
         'enable': True,
-        'filename': './100-160-15-8.pt',
+        'filename': './T1-65-5-3.pt',
         'hotel_swap': True
         # 'order': None  # Add 'order' to hold the hotel order
 
@@ -225,7 +225,7 @@ if __name__ == '__main__':
 
 ###################################################################################
   
-    instance_path = r"100-160-15-8.ophs"
+    instance_path = r"T1-65-5-3.ophs"
     # instance_path = r"100-210-15-10.ophs"
     # instance_path = r"100-50-12-6.ophs"
     # instance_path = r"../../../T1-65-2-3.ophs"
@@ -511,10 +511,10 @@ if __name__ == '__main__':
             best_score (float): The best reward achieved.
         """
         # Step 1: Generate the initial hotel order using the greedy algorithm
-        hotel_order = greedy_trip_with_exploration(hps, n_days)  # Get hotel order
-        # hotel_order = simulated_annealing(hps, n_days)  # Get hotel order
+        # hotel_order = greedy_trip_with_exploration(hps, n_days)  # Get hotel order
+        hotel_order = simulated_annealing(hps, n_days)  # Get hotel order
         best_order_number = sequence_to_order(hotel_order, hotel_size)  # Convert sequence to order
-        print(best_order_number)
+        # print(hotel_order)
         # Step 2: Perform RL inference to get the reward and prizes
         complete_solution, best_score, prize_per_day = RL_inference(best_order_number)
 
@@ -538,14 +538,14 @@ if __name__ == '__main__':
                     hps[to_hotel, from_hotel] = max(hps[to_hotel, from_hotel], prize)
 
             # Step 4: Generate a new hotel order using the updated HPS matrix
-            hotel_order = greedy_trip_with_exploration(hps, n_days)  # Get new hotel order
-            # hotel_order = simulated_annealing(hps, n_days)  # Get new hotel order
-            # print(hotel_order)
+            # hotel_order = greedy_trip_with_exploration(hps, n_days)  # Get new hotel order
+            hotel_order = simulated_annealing(hps, n_days)  # Get new hotel order
+            print(hotel_order)
             new_order_number = sequence_to_order(hotel_order, hps.size(0))  # Convert sequence to order
-            print(best_order_number)
+            # print(best_order_number)
             # Step 5: Perform RL inference to get the reward and prizes for the new order
             complete_solution, new_score, prize_per_day = RL_inference(new_order_number)
-            # print(new_score)
+            print(new_score)
 
             # Step 6: Check if the new score is an improvement
             if new_score > best_score:
@@ -573,7 +573,7 @@ if __name__ == '__main__':
     hps = creat_hps_matrix(hotels_number, hotel_nodes_index, all_nodes_index, distance_matrix, scores)
     print(hps)
     start_time = time.time()
-    order_number, reward, solution, final_hps = optimize_trip(hps, hotels_number, day_number, max_no_improve=20)
+    order_number, reward, solution, final_hps = optimize_trip(hps, hotels_number, day_number, max_no_improve=5)
     end_time = time.time()
     runtime = end_time - start_time
 

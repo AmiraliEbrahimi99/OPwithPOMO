@@ -6,13 +6,13 @@ def get_random_problems(batch_size, problem_size, hotel_size):
     day_number = torch.randint(2 ,6 , size=(batch_size, 1))
 
 
-    # if problem_size == 32:
+    # if problem_size == 12:
     if problem_size == 32:
-        t_max = 4 
+        t_max = 5 
     elif problem_size == 64:
-        t_max = 0.8 
+        t_max = 6 
     elif problem_size == 100:
-        t_max = 1
+        t_max = 7
     else:
         raise NotImplementedError
 
@@ -28,10 +28,13 @@ def get_random_problems(batch_size, problem_size, hotel_size):
 
     node_xy = torch.rand(size=(batch_size, problem_size, 2))
 
-    mean_generator = torch.rand(batch_size, problem_size) * (95.5 - 4.5) + 4.5  # Mean between 4.5 and 95.5
-    deviation_generator = torch.rand(batch_size, problem_size) * (16.5 - 1.5) + 1.5  # Deviation between 1.5 and 16.5
-    node_prize = torch.stack((mean_generator, deviation_generator), dim=-1)
+    # mean_generator = torch.rand(batch_size, problem_size) * (95.5 - 4.5) + 4.5  # Mean between 4.5 and 95.5
+    # # deviation_generator = torch.rand(batch_size, problem_size) * (16.5 - 1.5) + 1.5  # Deviation between 1.5 and 16.5
+    # deviation_generator = torch.rand(batch_size, problem_size) * 2 + 1.5  # Deviation between 1.5 and 16.5
+    # node_prize = torch.stack((mean_generator, deviation_generator), dim=-1)
     
+    node_prize = torch.randint(1, 100, size=(batch_size, problem_size))/100
+
     return day_number, depot_xy, node_xy , node_prize, trip_length
 
 def augment_xy_data_by_8_fold(xy_data):
