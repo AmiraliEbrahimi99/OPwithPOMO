@@ -20,8 +20,8 @@ def get_random_problems(batch_size, problem_size, hotel_size, day_number):
     node_xy = torch.rand(size=(batch_size, problem_size, 2))
 
     mean_generator = torch.rand(batch_size, problem_size) * (95.5 - 4.5) + 4.5  # Mean between 4.5 and 95.5
-    # deviation_generator = torch.rand(batch_size, problem_size) * (16.5 - 1.5) + 1.5  # Deviation between 1.5 and 16.5
-    deviation_generator = torch.rand(batch_size, problem_size) * 8 + 1.5  
+    deviation_generator = torch.rand(batch_size, problem_size) * (8 - 1.5) + 1.5  # Deviation between 1.5 and 16.5
+
     node_prize = torch.stack((mean_generator, deviation_generator), dim=-1)
 
     # node_prize = torch.randint(1, 100, size=(batch_size, problem_size))/100
@@ -48,3 +48,4 @@ def augment_xy_data_by_8_fold(xy_data):
     # shape: (8*batch, N, 2)
 
     return aug_xy_data
+

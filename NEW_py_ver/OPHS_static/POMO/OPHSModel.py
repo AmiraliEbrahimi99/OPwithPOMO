@@ -22,7 +22,7 @@ class OPHSModel(nn.Module):
             # shape: (batch, problem, 2)
             node_prize = reset_state.node_prize
             # shape: (batch, problem)
-            node_xy_prize = torch.cat((node_xy, node_prize[:, :, None]), dim=2)
+            node_xy_prize = torch.cat((node_xy, node_prize), dim=2)
             # shape: (batch, problem, 3)
 
             self.encoded_nodes = self.encoder(depot_xy, node_xy_prize)

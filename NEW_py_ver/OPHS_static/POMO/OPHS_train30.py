@@ -59,7 +59,7 @@ optimizer_params = {
         'weight_decay': 1e-6
     },
     'scheduler': {
-        'milestones': [90,],
+        'milestones': [500,],
         'gamma': 0.1
     }
 }
@@ -67,7 +67,7 @@ optimizer_params = {
 trainer_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
-    'epochs': 100 ,
+    'epochs': 510 ,
     'train_episodes': 10*1000,
     'train_batch_size': 64,
     'prev_model_path': None,
@@ -93,7 +93,7 @@ trainer_params = {
 
 logger_params = {
     'log_file': {
-        'desc': 'train_ophs_H7D3_100_static_test_highmean-midvar(20)-2-99',
+        'desc': 'ophs_fo_version_1_H7D3',
         'filename': 'run_log'
     }
 }
