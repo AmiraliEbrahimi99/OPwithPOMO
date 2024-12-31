@@ -157,14 +157,21 @@ class OPHSTrainer:
 
     def _train_one_batch(self, batch_size):
 
+        # Augmentation
+        ###############################################
+        if self.trainer_params['augmentation_enable']:
+            aug_factor = self.trainer_params['aug_factor']
+        else:
+            aug_factor = 1
         # Prep
         ###############################################
+
         self.model.train()
-        self.env.load_problems(batch_size)
+        self.env.load_problems(batch_size, aug_factor)
         reset_state, _, _ = self.env.reset()
         self.model.pre_forward(reset_state)
 
-        prob_list = torch.zeros(size=(batch_size, self.env.pomo_size, 0))
+        prob_list = torch.zeros(size=(batch_size*aug_factor, self.env.pomo_size, 0))
         # shape: (batch, pomo, 0~problem)
 
         # POMO Rollout

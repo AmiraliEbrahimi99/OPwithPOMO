@@ -15,7 +15,7 @@ def get_random_problems(batch_size, problem_size, hotel_size, day_number):
     else:
         raise NotImplementedError
 
-    trip_length = (t_max/day_number)* torch.ones(batch_size, day_number, 1)
+    trip_length = (t_max/day_number)* torch.ones(batch_size, day_number)
 
     node_xy = torch.rand(size=(batch_size, problem_size, 2))
 

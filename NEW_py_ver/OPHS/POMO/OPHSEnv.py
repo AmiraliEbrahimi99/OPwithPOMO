@@ -118,7 +118,7 @@ class OPHSEnv:
             # Extract coordinates for the computed state
             self.saved_depot_xy = coords[state, :].unsqueeze(0)
 
-    def load_problems(self, batch_size, aug_factor=8) : 
+    def load_problems(self, batch_size, aug_factor=1) : 
         self.batch_size = batch_size
         
         if not self.FLAG__use_saved_problems:

@@ -39,7 +39,7 @@ env_params = {
     'problem_size': 32,
     'pomo_size': 32,
     'hotel_size': 7,
-    'day_number': 3,                    
+    'day_number': 4,                    
 }
 
 model_params = {
@@ -69,8 +69,12 @@ trainer_params = {
     'cuda_device_num': CUDA_DEVICE_NUM,
     'epochs': 510 ,
     'train_episodes': 10*1000,
-    'train_batch_size': 64*8,
+    'train_batch_size': 64,
+
+    'augmentation_enable': False,
+    'aug_factor': 8,
     'prev_model_path': None,
+
     'logging': {
         'model_save_interval': 20,
         'img_save_interval': 20,
@@ -93,7 +97,7 @@ trainer_params = {
 
 logger_params = {
     'log_file': {
-        'desc': 'ophssp_do_H7D3N32_8xAug',
+        'desc': 'ophssp_do_H7D3N32',
         'filename': 'run_log'
     }
 }
