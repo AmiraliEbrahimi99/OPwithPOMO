@@ -6,8 +6,6 @@ from OPHSProblemDef import get_random_problems, augment_xy_data_by_8_fold
 class Reset_state : 
     depot_xy: torch.Tensor = None
     # shape: (batch, hotel, 2)
-    day_number: torch.Tensor = None
-    # shape: (batch, 1)
     trip_length: torch.Tensor = None
     # shape: (batch, day, 1)
     node_xy : torch.Tensor = None
@@ -38,9 +36,9 @@ class OPHSEnv:
         ####################################       
         self.env_params = env_params
         self.problem_size = env_params['problem_size']
-        self.pomo_size = env_params['pomo_size'] 
-        self.hotel_size = env_params['hotel_size']                   
-
+        self.pomo_size = env_params['pomo_size']
+        self.hotel_size = env_params['hotel_size']                      # new input
+        self.day_number = env_params['day_number']                      # new input
         
         self.FLAG__use_saved_problems = False
         self.saved_depot_xy = None
@@ -87,33 +85,54 @@ class OPHSEnv:
         self.reset_state = Reset_state()
         self.step_state = Step_state()
 
-    def use_saved_problems(self, filename, device):             
+    def use_saved_problems(self, filename, device, hotel_swap: bool = False, order: int=0):             
         self.FLAG__use_saved_problems = True
 
         loaded_dict = torch.load(filename, map_location=device)
         self.saved_depot_xy = loaded_dict['hotel_xy']
         self.saved_node_xy = loaded_dict['node_xy']
         self.saved_node_prize = loaded_dict['node_prize']
-        self.saved_remaining_len = loaded_dict['remain_len']
-        self.saved_index = 0    
+        self.saved_remain_len = loaded_dict['remain_len']
+        self.saved_index = 0   
 
-    def load_problems(self, batch_size, aug_factor=1) : 
+        if hotel_swap:
+            coords = self.saved_depot_xy.squeeze(0)
+
+            total_states = self.hotel_size**(self.day_number)
+            if order >= total_states:
+                raise ValueError(f"Order {order} exceeds the total number of states {total_states}.")
+
+            # Compute the state corresponding to the given order
+            state = [0]  # Start with the fixed start point
+            current_order = order
+            for _ in range(self.day_number-1):
+                point = current_order % self.hotel_size
+                state.append(point)
+                current_order //= self.hotel_size
+            state.append(1)  # Add the fixed end point
+
+            # Ensure the sequence length matches hotel_size by appending 1s
+            while len(state) < self.hotel_size:
+                state.append(1)
+
+            # Extract coordinates for the computed state
+            self.saved_depot_xy = coords[state, :].unsqueeze(0)
+
+    def load_problems(self, batch_size, aug_factor=8) : 
         self.batch_size = batch_size
         
         if not self.FLAG__use_saved_problems:
-            day_number, depot_xy, node_xy, node_prize, trip_length = get_random_problems(batch_size, self.problem_size, self.hotel_size)  
+            depot_xy, node_xy, node_prize, trip_length = get_random_problems(batch_size, self.problem_size, self.hotel_size, self.day_number)   # new trip length value
         else:
             depot_xy = self.saved_depot_xy[self.saved_index:self.saved_index+batch_size]
             node_xy = self.saved_node_xy[self.saved_index:self.saved_index+batch_size]
             node_prize = self.saved_node_prize[self.saved_index:self.saved_index+batch_size]
             trip_length = self.saved_remain_len[self.saved_index:self.saved_index+batch_size]
-            day_number = self.saved_day_number
             self.saved_index += batch_size
        
         # self.trip_length = trip_length
         self.depot_xy = depot_xy
         self.node_xy = node_xy
-        self.day_number = day_number
 
         if aug_factor > 1:
             if aug_factor == 8:
@@ -126,10 +145,10 @@ class OPHSEnv:
                 
         self.depot_node_xy = torch.cat((self.depot_xy, self.node_xy), dim=1)
         # shape: (batch, problem+hotel, 2)
-        depot_prize = torch.zeros(size=(self.batch_size, self.hotel_size))                            
-        # shape: (batch, hotel)
+        depot_prize = torch.zeros(size=(self.batch_size, self.hotel_size, 2))                            
+        # shape: (batch, hotel, 2)
         self.depot_node_prize = torch.cat((depot_prize, node_prize), dim=1)
-        # shape: (batch, problem+hotel)
+        # shape: (batch, problem+hotel, 2)
 
         self.trip_length = trip_length.squeeze(2)
         # shape: (batch, day)
@@ -140,7 +159,6 @@ class OPHSEnv:
 
         self.reset_state.depot_xy = self.depot_xy
         self.reset_state.node_xy = self.node_xy
-        self.reset_state.day_number = self.day_number
         self.reset_state.node_prize = node_prize
         self.reset_state.trip_length = trip_length
         
@@ -232,16 +250,22 @@ class OPHSEnv:
 
         # Dynamic-2
         ####################################
-        self.at_the_depot = (selected < self.hotel_size)                                                        # at the depot condition changed
-
-        self.prize_list = self.depot_node_prize[:, None, :].expand(self.batch_size, self.pomo_size, -1)
-        # shape: (batch, pomo, problem+hotel)
-        self.gathering_index = selected[:, :, None]
-        # shape: (batch, pomo, 1)
+        self.at_the_depot = (selected < self.hotel_size)                                                       
+   
+        self.prize_list = self.depot_node_prize[:, None, :, :].expand(self.batch_size, self.pomo_size, -1, -1)
+        # shape: (batch, pomo, problem+hotel , 2)
+        self.gathering_index = selected[:, :, None, None].expand(-1, -1, 1, 2)
+        # shape: (batch, pomo, 1, 1)
         self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
-        # shape: (batch, pomo)
+        # shape: (batch, pomo, 2)
+        raw_rewards = torch.randn(self.batch_size, self.problem_size) * self.selected_prize[:,:,1] + self.selected_prize[:,:,0]
 
-        self.collected_prize += self.selected_prize
+        non_zero_mask = raw_rewards != 0                                    # Clamp only the non-zero values
+        node_prizes = raw_rewards.clone()
+        node_prizes[non_zero_mask] = torch.clamp(torch.round(raw_rewards[non_zero_mask]), min=2, max=99)
+        self.reward_tensor = node_prizes / 100
+
+        self.collected_prize += self.reward_tensor
     
         selected_len = self.calculate_two_distance()
 

@@ -2,30 +2,31 @@ import torch
 import numpy as np
 
 
-def get_random_problems(batch_size, problem_size, hotel_size):
+def get_random_problems(batch_size, problem_size, hotel_size, day_number):
  
     depot_xy = torch.rand(size=(batch_size, hotel_size ,2))
 
-    day_number = torch.randint(2 ,5 , size=(batch_size, 1))
-
     if problem_size == 32:
-        t_max = 4 
+        t_max = 5 
     elif problem_size == 64:
-        t_max = 0.8 
+        t_max = 6 
     elif problem_size == 100:
-        t_max = 1
+        t_max = 7
     else:
         raise NotImplementedError
 
+    trip_length = (t_max/day_number)* torch.ones(batch_size, day_number, 1)
 
-    trip_length = (t_max/day_number).unsqueeze(dim=1).expand(-1, day_number.max().item(), -1)
-    day_mask = torch.arange(day_number.max().item()).unsqueeze(0) < day_number  # Shape: (1, max_days) < (batch_size, 1)
-    trip_length = trip_length * day_mask.expand(batch_size, -1).unsqueeze(-1)  # Shape: (batch_size, max_days, 1)
- 
     node_xy = torch.rand(size=(batch_size, problem_size, 2))
-    node_prize = torch.randint(1, 10, size=(batch_size, problem_size))  # 1 to 9
+
+    mean_generator = torch.rand(batch_size, problem_size) * (95.5 - 4.5) + 4.5  # Mean between 4.5 and 95.5
+    deviation_generator = torch.rand(batch_size, problem_size) * (8 - 1.5) + 1.5  # Deviation between 1.5 and 16.5
+
+    node_prize = torch.stack((mean_generator, deviation_generator), dim=-1)
+
+    # node_prize = torch.randint(1, 100, size=(batch_size, problem_size))/100
     
-    return day_number, depot_xy, node_xy, node_prize, trip_length
+    return depot_xy, node_xy , node_prize, trip_length
 
 def augment_xy_data_by_8_fold(xy_data):
     # xy_data.shape: (batch, N, 2)

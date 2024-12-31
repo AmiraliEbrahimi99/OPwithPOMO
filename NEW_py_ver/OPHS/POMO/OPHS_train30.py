@@ -7,7 +7,7 @@ warnings.filterwarnings("ignore", message="Use of masked_fill_ on expanded tenso
 
 # Machine Environment Config
 
-DEBUG_MODE = True
+DEBUG_MODE = False
 USE_CUDA = not DEBUG_MODE
 CUDA_DEVICE_NUM = 0
 
@@ -38,7 +38,8 @@ from OPHSTrainer import OPHSTrainer as Trainer
 env_params = {
     'problem_size': 32,
     'pomo_size': 32,
-    'hotel_size': 7,                    
+    'hotel_size': 7,
+    'day_number': 3,                    
 }
 
 model_params = {
@@ -92,7 +93,7 @@ trainer_params = {
 
 logger_params = {
     'log_file': {
-        'desc': 'ophs_30_H7D3_510epoch',
+        'desc': 'ophssp_do_H7D3N32_8xAug',
         'filename': 'run_log'
     }
 }
