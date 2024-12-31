@@ -15,7 +15,7 @@ def get_random_problems(batch_size, problem_size, hotel_size, day_number):
     else:
         raise NotImplementedError
 
-    trip_length = (t_max/day_number)* torch.ones(batch_size, day_number, 1)
+    trip_length = (t_max/day_number)* torch.ones(batch_size, day_number)
 
     node_xy = torch.rand(size=(batch_size, problem_size, 2))
 
@@ -23,7 +23,6 @@ def get_random_problems(batch_size, problem_size, hotel_size, day_number):
     deviation_generator = torch.rand(batch_size, problem_size) * (8 - 1.5) + 1.5  # Deviation between 1.5 and 16.5
 
     node_prize = torch.stack((mean_generator, deviation_generator), dim=-1)
-
     # node_prize = torch.randint(1, 100, size=(batch_size, problem_size))/100
     
     return depot_xy, node_xy , node_prize, trip_length
