@@ -22,7 +22,8 @@ class OPHSModel(nn.Module):
             # shape: (batch, problem, 2)
             node_prize = reset_state.node_prize
             # shape: (batch, problem)
-            node_xy_prize = torch.cat((node_xy, node_prize), dim=2)
+            # node_xy_prize = torch.cat((node_xy, node_prize), dim=2)
+            node_xy_prize = torch.cat((node_xy, node_prize[:, :, None]), dim=2)
             # shape: (batch, problem, 3)
 
             self.encoded_nodes = self.encoder(depot_xy, node_xy_prize)
@@ -98,7 +99,8 @@ class OPHS_Encoder(nn.Module):
         encoder_layer_num = self.model_params['encoder_layer_num']
 
         self.embedding_depot = nn.Linear(2, embedding_dim)
-        self.embedding_node = nn.Linear(4, embedding_dim)
+        self.embedding_node = nn.Linear(3, embedding_dim)
+        # self.embedding_node = nn.Linear(4, embedding_dim)
         self.layers = nn.ModuleList([EncoderLayer(**model_params) for _ in range(encoder_layer_num)])
 
     def forward(self, depot_xy, node_xy_prize):

@@ -97,7 +97,7 @@ trainer_params = {
 
 logger_params = {
     'log_file': {
-        'desc': 'ophssp_do_H7D3N32',
+        'desc': 'ophs_do_H7D4N32',
         'filename': 'run_log'
     }
 }
