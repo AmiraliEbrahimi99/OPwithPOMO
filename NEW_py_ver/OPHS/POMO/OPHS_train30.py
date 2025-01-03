@@ -4,6 +4,7 @@ import warnings
 # Filter out the specific UserWarnings you want to ignore
 warnings.filterwarnings("ignore", message="Use of index_put_ on expanded tensors is deprecated.")
 warnings.filterwarnings("ignore", message="Use of masked_fill_ on expanded tensors is deprecated.")
+warnings.filterwarnings("ignore", category=FutureWarning, message=".*torch.backends.cuda.sdp_kernel.*")
 
 # Machine Environment Config
 
@@ -38,8 +39,8 @@ from OPHSTrainer import OPHSTrainer as Trainer
 env_params = {
     'problem_size': 32,
     'pomo_size': 32,
-    'hotel_size': 7,
     'day_number': 4,                    
+    'hotel_size': 7,
 }
 
 model_params = {
@@ -59,7 +60,7 @@ optimizer_params = {
         'weight_decay': 1e-6
     },
     'scheduler': {
-        'milestones': [500,],
+        'milestones': [190,],
         'gamma': 0.1
     }
 }
@@ -67,17 +68,17 @@ optimizer_params = {
 trainer_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
-    'epochs': 510 ,
+    'epochs': 200,
     'train_episodes': 10*1000,
     'train_batch_size': 64,
 
-    'augmentation_enable': False,
-    'aug_factor': 8,
+    'augmentation_enable': True,
+    'aug_factor': 16,
     'prev_model_path': None,
 
     'logging': {
-        'model_save_interval': 20,
-        'img_save_interval': 20,
+        'model_save_interval': 10,
+        'img_save_interval': 50,
         'log_image_params_1': {
             'json_foldername': 'log_image_style',
             'filename': 'style_OP_5.json'
@@ -89,15 +90,15 @@ trainer_params = {
     },
     'model_load': {
         'enable': False,  # enable loading pre-trained model
-        # 'path': './result/saved_CVRP20_model',  # directory path of pre-trained model and log files saved.
-        # 'epoch': 2000,  # epoch version of pre-trained model to laod.
+        # 'path': './result/20250102_082329_ophs_do_H17D6N100',  # directory path of pre-trained model and log files saved.
+        # 'epoch': 200,  # epoch version of pre-trained model to laod.
 
     }
 }
 
 logger_params = {
     'log_file': {
-        'desc': 'ophs_do_H7D4N32',
+        'desc': 'ophssp_do_32_16xAug',
         'filename': 'run_log'
     }
 }

@@ -4,6 +4,7 @@ import warnings
 # Filter out the specific UserWarnings you want to ignore
 warnings.filterwarnings("ignore", message="Use of index_put_ on expanded tensors is deprecated.")
 warnings.filterwarnings("ignore", message="Use of masked_fill_ on expanded tensors is deprecated.")
+warnings.filterwarnings("ignore", category=FutureWarning, message=".*torch.backends.cuda.sdp_kernel.*")
 
 # Machine Environment Config
 
@@ -54,7 +55,7 @@ model_params = {
 
 optimizer_params = {
     'optimizer': {
-        'lr': 1e-4,
+        'lr': 8e-4,
         'weight_decay': 1e-6
     },
     'scheduler': {
@@ -66,9 +67,9 @@ optimizer_params = {
 trainer_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
-    'epochs': 510 ,
+    'epochs': 20 ,
     'train_episodes': 10*1000,
-    'train_batch_size': 64,
+    'train_batch_size': 512,
     'prev_model_path': None,
     'logging': {
         'model_save_interval': 20,
@@ -92,7 +93,7 @@ trainer_params = {
 
 logger_params = {
     'log_file': {
-        'desc': 'ophs_fo_version_2_H7D3',
+        'desc': 'ophssp_fo_H7D3_test',
         'filename': 'run_log'
     }
 }

@@ -22,8 +22,8 @@ class OPHSModel(nn.Module):
             # shape: (batch, problem, 2)
             node_prize = reset_state.node_prize
             # shape: (batch, problem)
-            # node_xy_prize = torch.cat((node_xy, node_prize), dim=2)
-            node_xy_prize = torch.cat((node_xy, node_prize[:, :, None]), dim=2)
+            node_xy_prize = torch.cat((node_xy, node_prize), dim=2)
+            # node_xy_prize = torch.cat((node_xy, node_prize[:, :, None]), dim=2)
             # shape: (batch, problem, 3)
 
             self.encoded_nodes = self.encoder(depot_xy, node_xy_prize)
@@ -99,8 +99,8 @@ class OPHS_Encoder(nn.Module):
         encoder_layer_num = self.model_params['encoder_layer_num']
 
         self.embedding_depot = nn.Linear(2, embedding_dim)
-        self.embedding_node = nn.Linear(3, embedding_dim)
-        # self.embedding_node = nn.Linear(4, embedding_dim)
+        # self.embedding_node = nn.Linear(3, embedding_dim)
+        self.embedding_node = nn.Linear(4, embedding_dim)
         self.layers = nn.ModuleList([EncoderLayer(**model_params) for _ in range(encoder_layer_num)])
 
     def forward(self, depot_xy, node_xy_prize):
@@ -149,7 +149,7 @@ class EncoderLayer(nn.Module):
         # Wqkv shape: (batch, problem+hotel+day, head_num*qkv_dim)
         # qkv shape: (batch, head_num, problem+hotel+day, qkv_dim)
 
-        out_concat = multi_head_attention(q, k, v)
+        out_concat = flash_multi_head_attention(q, k, v)
         # shape: (batch, problem+hotel+day, head_num*qkv_dim)
 
         multi_head_out = self.multi_head_combine(out_concat)
@@ -231,7 +231,8 @@ class OPHS_Decoder(nn.Module):
         q = q_last
         # shape: (batch, head_num, pomo, qkv_dim)
 
-        out_concat = multi_head_attention(q, self.k, self.v, rank3_ninf_mask=ninf_mask)
+        # out_concat = multi_head_attention(q, self.k, self.v, rank3_ninf_mask=ninf_mask)
+        out_concat = flash_multi_head_attention(q, self.k, self.v, rank3_ninf_mask=ninf_mask)
         # shape: (batch, pomo, head_num*qkv_dim)
 
         mh_atten_out = self.multi_head_combine(out_concat)
@@ -312,6 +313,40 @@ def multi_head_attention(q, k, v, rank2_ninf_mask=None, rank3_ninf_mask=None):
     # shape: (batch, n, head_num*key_dim)
 
     return out_concat
+
+def flash_multi_head_attention(q, k, v, rank2_ninf_mask=None, rank3_ninf_mask=None, dropout_rate=0):
+    """
+    Multi-head attention using Flash Attention for speed and efficiency.
+    Args:
+        q: Query tensor of shape (batch_size, num_heads, seq_len, head_dim)
+        k: Key tensor of shape (batch_size, num_heads, seq_len, head_dim)
+        v: Value tensor of shape (batch_size, num_heads, seq_len, head_dim)
+        rank2_ninf_mask: Rank-2 mask of shape (batch_size, seq_len)
+        rank3_ninf_mask: Rank-3 mask of shape (batch_size, seq_len, seq_len)
+        dropout_rate: Dropout rate applied to attention weights
+
+    Returns:
+        Tensor of shape (batch_size, seq_len, num_heads * head_dim)
+    """
+    # Ensure tensors are contiguous
+    q, k, v = q.contiguous(), k.contiguous(), v.contiguous()
+
+    # Prepare attention mask
+    mask = None
+    if rank2_ninf_mask is not None:
+        mask = rank2_ninf_mask[:, None, None, :].to(q.device)
+    if rank3_ninf_mask is not None:
+        mask = rank3_ninf_mask[:, None, :, :].to(q.device) if mask is None else mask + rank3_ninf_mask[:, None, :, :].to(q.device)
+
+    # Use flash attention for speed and efficiency
+    with torch.backends.cuda.sdp_kernel(enable_flash=True):
+        attn_output = F.scaled_dot_product_attention(q, k, v, attn_mask=mask, dropout_p=dropout_rate)
+
+    # Reshape output
+    batch_size, num_heads, seq_len, head_dim = q.size()
+    output = attn_output.transpose(1, 2).reshape(batch_size, seq_len, num_heads * head_dim)
+
+    return output
 
 
 class AddAndInstanceNormalization(nn.Module):

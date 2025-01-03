@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import torch
-from OPHSSPProblemDef import get_random_problems, augment_xy_data_by_8_fold
+from OPHSSPProblemDef import get_random_problems, augment_xy_data_by_8_fold, augment_xy_data_by_16_fold
 
 @dataclass 
 class Reset_state : 
@@ -146,6 +146,12 @@ class OPHSSPEnv:
                 self.depot_xy = augment_xy_data_by_8_fold(depot_xy)
                 self.node_xy = augment_xy_data_by_8_fold(node_xy)
                 node_prize = node_prize.repeat(8, 1)
+            elif aug_factor == 16:
+                self.batch_size = self.batch_size * 16
+                self.depot_xy = augment_xy_data_by_16_fold(depot_xy)
+                self.node_xy = augment_xy_data_by_16_fold(node_xy)
+                node_prize = node_prize.repeat(16, 1, 1)
+                self.trip_length = self.trip_length.repeat(16, 1)
             else:
                 raise NotImplementedError
                 
@@ -273,8 +279,9 @@ class OPHSSPEnv:
 
         non_zero_mask = raw_rewards != 0                                    # Clamp only the non-zero values
         node_prizes = raw_rewards.clone()
-        node_prizes[non_zero_mask] = torch.clamp(torch.round(raw_rewards[non_zero_mask]), min=2, max=99)
-        self.reward_tensor = node_prizes / 100                                      # Normalize by dividing by 100
+        node_prizes[non_zero_mask] = torch.clamp(torch.round(raw_rewards[non_zero_mask]), min=0.02, max=0.99)
+        # self.reward_tensor = node_prizes / 100                                      # Normalize by dividing by 100
+        self.reward_tensor = node_prizes                                      # Normalize by dividing by 100
 
         self.collected_prize += self.reward_tensor
 

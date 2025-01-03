@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import torch
-from OPHSProblemDef import get_random_problems, augment_xy_data_by_8_fold
+from OPHSProblemDef import get_random_problems, augment_xy_data_by_8_fold, augment_xy_data_by_16_fold
 
 @dataclass 
 class Reset_state : 
@@ -141,13 +141,19 @@ class OPHSEnv:
                 self.node_xy = augment_xy_data_by_8_fold(node_xy)
                 node_prize = node_prize.repeat(8, 1, 1)
                 self.trip_length = self.trip_length.repeat(8, 1)           
+            elif aug_factor == 16:
+                self.batch_size = self.batch_size * 16
+                self.depot_xy = augment_xy_data_by_16_fold(depot_xy)
+                self.node_xy = augment_xy_data_by_16_fold(node_xy)
+                node_prize = node_prize.repeat(16, 1, 1)
+                self.trip_length = self.trip_length.repeat(16, 1)
             else:
                 raise NotImplementedError
                 
         self.depot_node_xy = torch.cat((self.depot_xy, self.node_xy), dim=1)
         # shape: (batch, problem+hotel, 2)
-        # depot_prize = torch.zeros(size=(self.batch_size, self.hotel_size, 2))                            
-        depot_prize = torch.zeros(size=(self.batch_size, self.hotel_size))                            
+        depot_prize = torch.zeros(size=(self.batch_size, self.hotel_size, 2))                            
+        # depot_prize = torch.zeros(size=(self.batch_size, self.hotel_size))                            
         # shape: (batch, hotel, 2)
         self.depot_node_prize = torch.cat((depot_prize, node_prize), dim=1)
         # shape: (batch, problem+hotel, 2)
@@ -250,37 +256,35 @@ class OPHSEnv:
         ####################################
 
         self.at_the_depot = (selected == (self.finishing_depot_index))                   #change
-   
-        # self.prize_list = self.depot_node_prize[:, None, :, :].expand(self.batch_size, self.pomo_size, -1, -1)
-        # # shape: (batch, pomo, problem+hotel , 2)
-        # self.gathering_index = selected[:, :, None, None].expand(-1, -1, 1, 2)
-        # # shape: (batch, pomo, 1, 1)
-        # self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
-        # # shape: (batch, pomo, 2)
-        # raw_rewards = torch.randn(self.batch_size, self.problem_size) * self.selected_prize[:,:,1] + self.selected_prize[:,:,0]
 
-        # non_zero_mask = raw_rewards != 0                                    # Clamp only the non-zero values
-        # node_prizes = raw_rewards.clone()
-        # node_prizes[non_zero_mask] = torch.clamp(torch.round(raw_rewards[non_zero_mask]), min=2, max=99)
-        # self.reward_tensor = node_prizes / 100
-
-        # self.collected_prize += self.reward_tensor
-
-        self.prize_list = self.depot_node_prize[:, None, :].expand(self.batch_size, self.pomo_size, -1)
-        # shape: (batch, pomo, problem+hotel)
-        self.gathering_index = selected[:, :, None]
-        # shape: (batch, pomo, 1)
+        self.prize_list = self.depot_node_prize[:, None, :, :].expand(self.batch_size, self.pomo_size, -1, -1)
+        # shape: (batch, pomo, problem+hotel , 2)
+        self.gathering_index = selected[:, :, None, None].expand(-1, -1, 1, 2)
+        # shape: (batch, pomo, 1, 1)
         self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
-        # shape: (batch, pomo)
+        # shape: (batch, pomo, 2)
+        raw_rewards = torch.randn(self.batch_size, self.problem_size) * self.selected_prize[:,:,1] + self.selected_prize[:,:,0]
 
-        self.collected_prize += self.selected_prize
+        non_zero_mask = raw_rewards != 0                                    # Clamp only the non-zero values
+        node_prizes = raw_rewards.clone()
+        node_prizes[non_zero_mask] = torch.clamp(torch.round(raw_rewards[non_zero_mask]), min=0.02, max=0.99)
+        self.reward_tensor = node_prizes
+
+        self.collected_prize += self.reward_tensor
+
+
+        # self.prize_list = self.depot_node_prize[:, None, :].expand(self.batch_size, self.pomo_size, -1)
+        # # shape: (batch, pomo, problem+hotel)
+        # self.gathering_index = selected[:, :, None]
+        # # shape: (batch, pomo, 1)
+        # self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
+        # # shape: (batch, pomo)
+
+        # self.collected_prize += self.selected_prize
     
         selected_len = self.calculate_two_distance()
 
         self.remaining_len -= selected_len
-
-        # print(f'\n\n remaining len: {self.remaining_len}')
-        # print(f'\n\nselected: {self.selected_node_list} \nmask: {self.ninf_mask}\n remaining len: {self.remaining_len}')
 
         self.visited_ninf_flag[self.BATCH_IDX, self.POMO_IDX, selected] = float('-inf')
         # shape: (batch, pomo, problem+hotel)

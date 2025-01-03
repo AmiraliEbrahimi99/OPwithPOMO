@@ -4,6 +4,7 @@ import warnings
 # Filter out the specific UserWarnings you want to ignore
 warnings.filterwarnings("ignore", message="Use of index_put_ on expanded tensors is deprecated.")
 warnings.filterwarnings("ignore", message="Use of masked_fill_ on expanded tensors is deprecated.")
+warnings.filterwarnings("ignore", category=FutureWarning, message=".*torch.backends.cuda.sdp_kernel.*")
 
 # Machine Environment Config
 
@@ -36,10 +37,10 @@ from OPHSTrainer import OPHSTrainer as Trainer
 # parameters
 
 env_params = {
-    'problem_size': 32,
-    'pomo_size': 32,
-    'day_number': 4,
-    'hotel_size': 7,
+    'problem_size': 100,
+    'pomo_size': 100,
+    'day_number': 10,
+    'hotel_size': 17,
 }
 
 model_params = {
@@ -55,11 +56,11 @@ model_params = {
 
 optimizer_params = {
     'optimizer': {
-        'lr': 1e-4,
+        'lr': 2e-4,
         'weight_decay': 1e-6
     },
     'scheduler': {
-        'milestones': [500,],
+        'milestones': [190,],
         'gamma': 0.1
     }
 }
@@ -67,16 +68,16 @@ optimizer_params = {
 trainer_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
-    'epochs': 510,
+    'epochs': 200,
     'train_episodes': 10*1000,
-    'train_batch_size': 64,
+    'train_batch_size': 128,
     
     'augmentation_enable': False,
     'aug_factor': 8,
     'prev_model_path': None,
 
     'logging': {
-        'model_save_interval': 20,
+        'model_save_interval': 5,
         'img_save_interval': 20,
         'log_image_params_1': {
             'json_foldername': 'log_image_style',
@@ -89,15 +90,15 @@ trainer_params = {
     },
     'model_load': {
         'enable': False,  # enable loading pre-trained model
-        # 'path': './result/saved_CVRP20_model',  # directory path of pre-trained model and log files saved.
-        # 'epoch': 2000,  # epoch version of pre-trained model to laod.
+        # 'path': './result/20250103_211304_ophssp_so_100_XL_2',  # directory path of pre-trained model and log files saved.
+        # 'epoch': 140,  # epoch version of pre-trained model to laod.
 
     }
 }
 
 logger_params = {
     'log_file': {
-        'desc': 'ophs_fo_H7D4N32',
+        'desc': 'ophssp_so_100_XL_3',
         'filename': 'run_log'
     }
 }
