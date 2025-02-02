@@ -1,6 +1,6 @@
 import torch
 
-def get_random_problems(batch_size, problem_size, hotel_size, day_number):
+def get_random_problems(batch_size, problem_size, hotel_size, day_number, stochastic_prize):
  
     depot_xy = torch.rand(size=(batch_size, hotel_size ,2))
 
@@ -19,11 +19,12 @@ def get_random_problems(batch_size, problem_size, hotel_size, day_number):
 
     node_xy = torch.rand(size=(batch_size, problem_size, 2))
 
-    mean_generator = (torch.rand(batch_size, problem_size) * (95.5 - 4.5) + 4.5)/100  # Mean between 4.5 and 95.5
-    deviation_generator = (torch.rand(batch_size, problem_size) * (16 - 1.5) + 1.5)/100  # Deviation between 1.5 and 16
-    node_prize = torch.stack((mean_generator, deviation_generator), dim=-1)
-
-    # node_prize = torch.randint(2, 100, size=(batch_size, problem_size))/100
+    if stochastic_prize:
+        mean_generator = (torch.rand(batch_size, problem_size) * (95.5 - 4.5) + 4.5)/100  # Mean between 4.5 and 95.5
+        deviation_generator = (torch.rand(batch_size, problem_size) * (16 - 1.5) + 1.5)/100  # Deviation between 1.5 and 16
+        node_prize = torch.stack((mean_generator, deviation_generator), dim=-1)
+    else:
+        node_prize = torch.randint(2, 100, size=(batch_size, problem_size))/100
     
     return depot_xy, node_xy , node_prize, trip_length
 

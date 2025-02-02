@@ -1,10 +1,14 @@
 ##########################################################################################
+import warnings
+warnings.filterwarnings("ignore", message="UserWarning: torch.set_default_tensor_type() is deprecated as of PyTorch 2.1, please use torch.set_default_dtype() and torch.set_default_device() as alternatives")  
+warnings.filterwarnings("ignore", message="You are using `torch.load` with `weights_only=False`")
+
 # Path Config
 
 import math
 import os
 import sys
-from itertools import product
+import pandas as pd
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, "..")  # for problem_def
@@ -16,7 +20,6 @@ from scipy.spatial.distance import pdist, squareform
 import numpy as np
 
 import random
-from deap import base, creator, tools, algorithms
 
 import os
 from logging import getLogger
@@ -33,28 +36,26 @@ DEBUG_MODE = True
 USE_CUDA = not DEBUG_MODE
 CUDA_DEVICE_NUM = 0
 
-
-
 ##########################################################################################
 # import
 
 import logging
 from utils.utils import create_logger, copy_all_src
 
-from OPHSTester import OPHSTester as Tester
-
-
 ##########################################################################################
 # parameters
-
+stochastic_prize = False
 env_params = {
     'problem_size': 30,
     'pomo_size': 30,
     'hotel_size': 7,
-    'day_number': 3
+    'day_number': 3,
+    'test_stage': True,
+    'stochastic_prize': stochastic_prize
 }
 
 model_params = {
+    'stochastic_prize': stochastic_prize,
     'embedding_dim': 128,
     'sqrt_embedding_dim': 128**(1/2),
     'encoder_layer_num': 6,
@@ -70,8 +71,9 @@ tester_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
     'model_load': {
-        'path': './result/ophs_H7D3_510_fixed_order',  # directory path of pre-trained model and log files saved.
-        'epoch': 510,  # epoch version of pre-trained model to laod.
+        # 'path': './result/ophs_H7D3_510_fixed_order',  # directory path of pre-trained model and log files saved.
+        'path': './result/ophs_so_32',  # directory path of pre-trained model and log files saved.
+        'epoch': 200,  # epoch number of pre-trained model to laod.
     },
     'test_episodes': 10*1000,
     'test_batch_size': 1000,
@@ -80,7 +82,8 @@ tester_params = {
     'aug_batch_size': 400,
     'test_data_load': {
         'enable': True,
-        'filename': './T1-65-5-3.pt',
+        # 'filename': './T1-65-5-3.pt',
+        'filename': '../../../100-160-15-8.pt',
         'hotel_swap': True
         # 'order': None  # Add 'order' to hold the hotel order
 
@@ -225,7 +228,7 @@ if __name__ == '__main__':
 
 ###################################################################################
   
-    instance_path = r"T1-65-5-3.ophs"
+    instance_path = r"../../../T1-65-5-3.ophs"
     # instance_path = r"100-210-15-10.ophs"
     # instance_path = r"100-50-12-6.ophs"
     # instance_path = r"../../../T1-65-2-3.ophs"
@@ -283,7 +286,7 @@ if __name__ == '__main__':
 
     #####################################################   FUNCTIONS   ###################################################################################
 
-    def creat_hps_matrix(hotels_number, hotel_nodes_index, all_nodes_index, distance_matrix, scores):
+    def create_hps_matrix(hotels_number, hotel_nodes_index, all_nodes_index, distance_matrix, scores):
             
         # Making hotel selection probability matrix
         hps = np.zeros((hotels_number, hotels_number))  # hps = hotel_potential_score
@@ -293,7 +296,6 @@ if __name__ == '__main__':
             for j in hotel_nodes_index:
                 if j >= i:
                     pair_list.append([i,j])
-
 
         for i in pair_list:
             a = i[0]
@@ -309,6 +311,46 @@ if __name__ == '__main__':
 
         return hps
     
+    def order_to_sequence(order, N, K):
+        sequence = [0]  # Start with the fixed start point
+        current_order = order
+        for _ in range(K):
+            point = current_order % N
+            sequence.append(point)
+            current_order //= N
+        sequence.append(1)  # Add the fixed end point
+        return sequence
+
+    def sequence_to_order(sequence, h):
+
+        K = len(sequence) - 2  # Exclude start and end points
+        order = 0
+        for i in range(K):
+            order += sequence[i + 1] * (h ** i)  # Use i + 1 to skip the start point (0)
+        return order
+
+    def RL_inference(input_order):
+        # Initialize the OPTester instance
+        self = OPTester(env_params=env_params, model_params=model_params, tester_params=tester_params)
+
+        if self.tester_params['test_data_load']['enable']:
+            self.env.use_saved_problems(
+                self.tester_params['test_data_load']['filename'], 
+                self.device, 
+                hotel_swap=self.tester_params['test_data_load']['hotel_swap'], 
+                order=input_order  # Ensure order is passed here
+            )
+        # Run the RL model
+        self.run(batch_size=1)
+
+        # Extract the results from self after running
+        pomo = torch.argmax(self.reward)
+        complete_order = [int(self.path[i][0][pomo]) for i in self.path]
+        best_score = float(self.reward[0, pomo].item())
+        prize_per_day = torch.stack(self.prize_per_day, dim=0)[..., pomo].squeeze()
+
+        return complete_order, best_score, prize_per_day
+
     def simulated_annealing(hps, n_days, initial_solution=None, T0=1000, T_min=0.1, alpha=0.99):
         """
         Apply Simulated Annealing to the hotel sequence problem.
@@ -383,61 +425,7 @@ if __name__ == '__main__':
         trip.append(1)
 
         return trip
-
-    def ga_with_deap(hps, n_days, population_size=50, generations=100, mutation_rate=0.1, crossover_rate=0.7):
-        """
-        Genetic Algorithm using DEAP to solve the hotel sequence problem.
-
-        Args:
-            hps (torch.Tensor): Hotel Profitability Score matrix.
-            n_days (int): Number of days in the trip.
-            population_size (int): Number of individuals in the population.
-            generations (int): Number of generations to evolve.
-            mutation_rate (float): Probability of mutation.
-            crossover_rate (float): Probability of crossover.
-
-        Returns:
-            best_individual (list): The best sequence found.
-            best_score (float): The score of the best sequence.
-        """
-        num_hotels = hps.shape[0]
-
-        # Define the fitness function
-        def evaluate(individual):
-            score = 0
-            for i in range(len(individual) - 1):
-                score += hps[individual[i], individual[i + 1]].item()
-            return (score,)  # DEAP requires fitness to be a tuple
-
-        # Define the DEAP components
-        creator.create("FitnessMax", base.Fitness, weights=(1.0,))  # Maximize the score
-        creator.create("Individual", list, fitness=creator.FitnessMax)
-
-        toolbox = base.Toolbox()
-        toolbox.register("indices", random.sample, range(1, num_hotels), n_days - 1)
-        toolbox.register("individual", tools.initCycle, creator.Individual, 
-                        lambda: [0] + toolbox.indices() + [1], n=1)
-        toolbox.register("population", tools.initRepeat, list, toolbox.individual)
-
-        toolbox.register("evaluate", evaluate)
-        toolbox.register("mate", tools.cxOrdered)  # Ordered crossover
-        toolbox.register("mutate", tools.mutShuffleIndexes, indpb=0.2)  # Shuffle mutation
-        toolbox.register("select", tools.selTournament, tournsize=3)  # Tournament selection
-
-        # Initialize population
-        population = toolbox.population(n=population_size)
-
-        # Run the algorithm
-        algorithms.eaSimple(population, toolbox, cxpb=crossover_rate, mutpb=mutation_rate,
-                            ngen=generations, verbose=True)
-
-        # Extract the best solution
-        best_individual = tools.selBest(population, k=1)[0]
-        best_score = evaluate(best_individual)[0]
-        
-        return list(best_individual)
-
-
+    
     def greedy_trip(hps, n_days):
         current_hotel = 0
         trip = [current_hotel]
@@ -454,75 +442,98 @@ if __name__ == '__main__':
 
         return trip
 
-    def sequence_to_order(sequence, h):
+    def greedy_trip_with_penalty(hps, n_days, penalty_factor=0.9):
+        current_hotel = 0
+        trip = [current_hotel]
+        total_score = 0
 
-        K = len(sequence) - 2  # Exclude start and end points
-        order = 0
-        for i in range(K):
-            order += sequence[i + 1] * (h ** i)  # Use i + 1 to skip the start point (0)
-        return order
+        for _ in range(n_days - 1):
+            scores = hps[current_hotel]
+            next_hotel = torch.argmax(scores).item()
 
-    def order_to_sequence(order, N, K):
-        sequence = [0]  # Start with the fixed start point
-        current_order = order
-        for _ in range(K):
-            point = current_order % N
-            sequence.append(point)
-            current_order //= N
-        sequence.append(1)  # Add the fixed end point
-        return sequence
+            total_score += hps[current_hotel, next_hotel].item()
+            trip.append(next_hotel)
+            current_hotel = next_hotel
 
-    def RL_inference(input_order):
-        # Initialize the OPTester instance
-        self = OPTester(env_params=env_params, model_params=model_params, tester_params=tester_params)
+            # Apply penalty to discourage reusing the same path
+            hps[current_hotel] *= penalty_factor
 
-        if self.tester_params['test_data_load']['enable']:
-            self.env.use_saved_problems(
-                self.tester_params['test_data_load']['filename'], 
-                self.device, 
-                hotel_swap=self.tester_params['test_data_load']['hotel_swap'], 
-                order=input_order  # Ensure order is passed here
-            )
-        # Run the RL model
-        self.run(batch_size=1)
+        total_score += hps[current_hotel, 1].item()
+        trip.append(1)
 
-        # Extract the results from self after running
-        pomo = torch.argmax(self.reward)
-        complete_order = [int(self.path[i][0][pomo]) for i in self.path]
-        best_score = float(self.reward[0, pomo].item())
-        prize_per_day = torch.stack(self.prize_per_day, dim=0)[..., pomo].squeeze()
-
-        return complete_order, best_score, prize_per_day
+        return trip
     
     #####################################################   Main loop   ###################################################################################
+    # Function to run the optimization multiple times and store results
+    def run_repeats_and_save(hps, hotel_size, n_days, max_no_improve_values, repeats, output_file):
+        results = []
+
+        # Loop over different max_no_improve values
+        for max_no_improve in max_no_improve_values:
+            print(f"Running for max_no_improve = {max_no_improve}")
+
+            # Repeat the optimization for the given number of repeats
+            for repeat in range(repeats):
+
+                start_time = time.time()
+                best_order, best_score, best_solution, final_hps, iterations_to_convergence, rate_of_improvement, percentage_of_improvement = optimize_trip(hps.clone(), hotel_size, n_days, max_no_improve)
+                end_time = time.time()
+                runtime = end_time - start_time
+
+                same_indices = (hps == final_hps).sum().item()  # Count matching elements
+                total_indices = hps.numel()                   # Total number of elements
+                metric = same_indices / total_indices
+
+                # Save results for this repeat
+                results.append({
+                    "Max_No_Improve": max_no_improve,
+                    "Repeat": repeat + 1,
+                    "Final_Score": best_score,
+                    "Runtime": runtime,
+                    "Percentage_of_Unchanged_indexes": metric*100,
+                    "Iterations_to_Convergence": iterations_to_convergence,
+                    "Rate_of_Improvement": rate_of_improvement,
+                    "Percentage_of_Improvement": percentage_of_improvement,
+                })
+
+        # Convert results to a DataFrame
+        df = pd.DataFrame(results)
+
+        # Compute summary statistics
+        summary = df.groupby("Max_No_Improve").agg(
+            Mean_Final_Score=("Final_Score", "mean"),
+            Std_Final_Score=("Final_Score", "std"),
+            Mean_Runtime=("Runtime", "mean"),
+            Std_Runtime=("Runtime", "std"),
+            Mean_Iterations_to_Convergence=("Iterations_to_Convergence", "mean"),
+            Std_Iterations_to_Convergence=("Iterations_to_Convergence", "std"),
+            Mean_Rate_of_Improvement=("Rate_of_Improvement", "mean"),
+            Std_Rate_of_Improvement=("Rate_of_Improvement", "std"),
+            Mean_Percentage_of_Improvement=("Percentage_of_Improvement", "mean"),
+            Std_Percentage_of_Improvement=("Percentage_of_Improvement", "std"),
+        ).reset_index()
+
+        # Save raw results and summary to an Excel file
+        with pd.ExcelWriter(output_file) as writer:
+            df.to_excel(writer, index=False, sheet_name="Raw Results")
+            summary.to_excel(writer, index=False, sheet_name="Summary Statistics")
+
+        print(f"Results saved to {output_file}")
+
 
     def optimize_trip(hps, hotel_size, n_days, max_no_improve=5):
-        """
-        Optimizes the trip by iteratively updating the HPS matrix
-        and applying a greedy solver combined with RL inference.
 
-        Args:
-            hps (torch.Tensor): The HPS matrix.
-            n_days (int): Number of days for the trip.
-            max_no_improve (int): Maximum iterations without improvement.
-
-        Returns:
-            best_order (list): The best hotel order sequence.
-            best_score (float): The best reward achieved.
-        """
-        # Step 1: Generate the initial hotel order using the greedy algorithm
-        # hotel_order = greedy_trip_with_exploration(hps, n_days)  # Get hotel order
-        hotel_order = simulated_annealing(hps, n_days)  # Get hotel order
+        hotel_order = greedy_trip_with_penalty(hps, n_days)  # Get hotel order
         best_order_number = sequence_to_order(hotel_order, hotel_size)  # Convert sequence to order
-        # print(hotel_order)
-        # Step 2: Perform RL inference to get the reward and prizes
         complete_solution, best_score, prize_per_day = RL_inference(best_order_number)
 
+        best_order = best_order_number
+        best_complete_solution = complete_solution
         no_improve_count = 0
         updated_mask = torch.zeros_like(hps, dtype=torch.bool)  # Initialize the updated mask
+        scores_history = [best_score] 
 
         while no_improve_count < max_no_improve:
-            # Step 3: Update the HPS matrix using the current best order and prizes
             for day in range(len(prize_per_day)):
                 from_hotel = hotel_order[day]
                 to_hotel = hotel_order[day + 1]
@@ -537,54 +548,62 @@ if __name__ == '__main__':
                     hps[from_hotel, to_hotel] = max(hps[from_hotel, to_hotel], prize)
                     hps[to_hotel, from_hotel] = max(hps[to_hotel, from_hotel], prize)
 
-            # Step 4: Generate a new hotel order using the updated HPS matrix
-            # hotel_order = greedy_trip_with_exploration(hps, n_days)  # Get new hotel order
-            hotel_order = simulated_annealing(hps, n_days)  # Get new hotel order
-            print(hotel_order)
+            hotel_order = greedy_trip_with_penalty(hps, n_days)  # Get new hotel order
             new_order_number = sequence_to_order(hotel_order, hps.size(0))  # Convert sequence to order
-            # print(best_order_number)
-            # Step 5: Perform RL inference to get the reward and prizes for the new order
             complete_solution, new_score, prize_per_day = RL_inference(new_order_number)
-            print(new_score)
+            scores_history.append(new_score)
 
-            # Step 6: Check if the new score is an improvement
             if new_score > best_score:
                 best_order, best_score, best_complete_solution = new_order_number, new_score, complete_solution
-                no_improve_count = 0  # Reset counter if improved
+                no_improve_count = 0  
             else:
-                no_improve_count += 1  # Increment counter if no improvement
+                no_improve_count += 1 
 
-        return best_order, best_score, best_complete_solution, hps
+        iterations_to_convergence = len(scores_history) - max_no_improve
+        rate_of_improvement = (best_score - scores_history[0]) / iterations_to_convergence
+        precentage_rate_of_improvement = (best_score - scores_history[0]) / (scores_history[0])
+
+        return best_order, best_score, best_complete_solution, hps, iterations_to_convergence, rate_of_improvement, precentage_rate_of_improvement
+
+    ####################################### testing #######################
+
+    # hps = create_hps_matrix(hotels_number, hotel_nodes_index, all_nodes_index, distance_matrix, scores)
+    # hps_old = hps.clone()
+    # start_time = time.time()
+    # order_number, reward, solution, final_hps, iteration, rate, p = optimize_trip(hps, hotels_number, day_number, max_no_improve=10)
+    # end_time = time.time()
+    # runtime = end_time - start_time
+
+    # hotel_sequence = order_to_sequence(order_number, hotels_number, day_number-1)
+
+    # cleaned_solution = []
+    # for value in solution:
+    #     if value not in cleaned_solution:
+    #         cleaned_solution.append(value)
+
+    # mapping = {i: hotel_sequence[i] for i in range(len(hotel_sequence))}
+    # clean_solution = [mapping[value] if value in mapping else value for value in cleaned_solution]
+
+    # same_indices = (hps_old == hps).sum().item()  # Count matching elements
+    # total_indices = hps.numel()                   # Total number of elements
+    # metric = same_indices / total_indices
+
+    # print(f"\n {same_indices}/{total_indices} did not change ({metric*100}%)")
+    # print(f"\n first hps:\n {hps_old}\n final hps:\n {final_hps}\n\n iter:{iteration}\n rate:{rate}\n per:{p}%\n Sequence: {hotel_sequence}\n total reward: {reward}\n raw solution:   {solution}\n final solution: {clean_solution}\n Runtime: {runtime} seconds\n")
 
 
-
-
-
-    ####################################### testing #####################
-    # trip = greedy_trip(hps,day_number)
-    # order = sequence_to_order(trip, hotels_number)
-    # print(order)
-    # trip =  [0, 0, 1, 1]
-    # sequence = order_to_sequence(order, hotels_number, day_number-1)
-    # print(f'Among all rewards: \n{self.reward}\n\n')
-
-
-    # Output the result 
-    hps = creat_hps_matrix(hotels_number, hotel_nodes_index, all_nodes_index, distance_matrix, scores)
-    print(hps)
-    start_time = time.time()
-    order_number, reward, solution, final_hps = optimize_trip(hps, hotels_number, day_number, max_no_improve=5)
-    end_time = time.time()
-    runtime = end_time - start_time
-
-    hotel_sequence = order_to_sequence(order_number, hotels_number, day_number-1)
-
-    print(f"\n final hps {final_hps}\n Sequence: {hotel_sequence}\n total reward: {reward}\n final solution {solution}\n Runtime: {runtime} seconds\n\n")
-
-    plot_trip(solution, hotels_number, hotel_sequence, coordinates, scores)
-
+    # plot_trip(solution, hotels_number, hotel_sequence, coordinates, scores)
     # trip = greedy_trip_with_exploration(hps,day_number)
     # order = sequence_to_order(trip, hotels_number)
     # print(trip, order)
+#################################################################################################
+    # max_no_improve_values = [5, 10]
+    max_no_improve_values = [5, 10, 20, 50, 100]
+    repeats = 20
+    output_file = "output_results/greedy_with_penalty_32.xlsx"
+    hps = create_hps_matrix(hotels_number, hotel_nodes_index, all_nodes_index, distance_matrix, scores)
+
+    # Run the experiment
+    run_repeats_and_save(hps, hotels_number, day_number, max_no_improve_values, repeats, output_file)
 
 

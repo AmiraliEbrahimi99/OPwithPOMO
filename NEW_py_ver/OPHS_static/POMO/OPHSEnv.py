@@ -39,6 +39,8 @@ class OPHSEnv:
         self.pomo_size = env_params['pomo_size']
         self.hotel_size = env_params['hotel_size']                      # new input
         self.day_number = env_params['day_number']                      # new input
+        self.stochastic_prize = env_params['stochastic_prize']
+        self.test_stage = env_params['test_stage']
         
         self.FLAG__use_saved_problems = False
         self.saved_depot_xy = None
@@ -122,7 +124,7 @@ class OPHSEnv:
         self.batch_size = batch_size
         
         if not self.FLAG__use_saved_problems:
-            depot_xy, node_xy, node_prize, trip_length = get_random_problems(batch_size, self.problem_size, self.hotel_size, self.day_number)   # new trip length value
+            depot_xy, node_xy, node_prize, trip_length = get_random_problems(batch_size, self.problem_size, self.hotel_size, self.day_number, self.stochastic_prize)   # new trip length value
         else:
             depot_xy = self.saved_depot_xy[self.saved_index:self.saved_index+batch_size]
             node_xy = self.saved_node_xy[self.saved_index:self.saved_index+batch_size]
@@ -152,12 +154,13 @@ class OPHSEnv:
                 
         self.depot_node_xy = torch.cat((self.depot_xy, self.node_xy), dim=1)
         # shape: (batch, problem+hotel, 2)
-        depot_prize = torch.zeros(size=(self.batch_size, self.hotel_size, 2))                            
-        # depot_prize = torch.zeros(size=(self.batch_size, self.hotel_size))                            
-        # shape: (batch, hotel, 2)
+        if self.stochastic_prize:
+            depot_prize = torch.zeros(size=(self.batch_size, self.hotel_size, 2))                            
+        else:
+            depot_prize = torch.zeros(size=(self.batch_size, self.hotel_size))                            
+        # shape: (batch, hotel, 2) or # shape: (batch, hotel)
         self.depot_node_prize = torch.cat((depot_prize, node_prize), dim=1)
         # shape: (batch, problem+hotel, 2)
-
         
         self.BATCH_IDX = torch.arange(self.batch_size)[:, None].expand(self.batch_size, self.pomo_size)
         self.POMO_IDX = torch.arange(self.pomo_size)[None, :].expand(self.batch_size, self.pomo_size)
@@ -257,31 +260,30 @@ class OPHSEnv:
 
         self.at_the_depot = (selected == (self.finishing_depot_index))                   #change
 
-        self.prize_list = self.depot_node_prize[:, None, :, :].expand(self.batch_size, self.pomo_size, -1, -1)
-        # shape: (batch, pomo, problem+hotel , 2)
-        self.gathering_index = selected[:, :, None, None].expand(-1, -1, 1, 2)
-        # shape: (batch, pomo, 1, 1)
-        self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
-        # shape: (batch, pomo, 2)
-        raw_rewards = torch.randn(self.batch_size, self.problem_size) * self.selected_prize[:,:,1] + self.selected_prize[:,:,0]
+        if self.stochastic_prize:
+            self.prize_list = self.depot_node_prize[:, None, :, :].expand(self.batch_size, self.pomo_size, -1, -1)
+            # shape: (batch, pomo, problem+hotel , 2)
+            self.gathering_index = selected[:, :, None, None].expand(-1, -1, 1, 2)
+            # shape: (batch, pomo, 1, 1)
+            self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
+            # shape: (batch, pomo, 2)
+            raw_rewards = torch.randn(self.batch_size, self.problem_size) * self.selected_prize[:,:,1] + self.selected_prize[:,:,0]
 
-        non_zero_mask = raw_rewards != 0                                    # Clamp only the non-zero values
-        node_prizes = raw_rewards.clone()
-        node_prizes[non_zero_mask] = torch.clamp(torch.round(raw_rewards[non_zero_mask]), min=0.02, max=0.99)
-        self.reward_tensor = node_prizes
+            non_zero_mask = raw_rewards != 0                                    # Clamp only the non-zero values
+            node_prizes = raw_rewards.clone()
+            node_prizes[non_zero_mask] = torch.clamp(torch.round(raw_rewards[non_zero_mask]), min=0.02, max=0.99)
+            self.reward_tensor = node_prizes
+            self.collected_prize += self.reward_tensor
+        else:
+            self.prize_list = self.depot_node_prize[:, None, :].expand(self.batch_size, self.pomo_size, -1)
+            # shape: (batch, pomo, problem+hotel)
+            self.gathering_index = selected[:, :, None]
+            # shape: (batch, pomo, 1)
+            self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
+            # shape: (batch, pomo)
+            self.collected_prize += self.selected_prize
 
-        self.collected_prize += self.reward_tensor
 
-
-        # self.prize_list = self.depot_node_prize[:, None, :].expand(self.batch_size, self.pomo_size, -1)
-        # # shape: (batch, pomo, problem+hotel)
-        # self.gathering_index = selected[:, :, None]
-        # # shape: (batch, pomo, 1)
-        # self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
-        # # shape: (batch, pomo)
-
-        # self.collected_prize += self.selected_prize
-    
         selected_len = self.calculate_two_distance()
 
         self.remaining_len -= selected_len
@@ -381,12 +383,15 @@ class OPHSEnv:
 
             reward = self.collected_prize
             # print(f'########selected nodes######## \n{self.selected_node_list}\n\n########trip length#######\n{self.trip_length}\n\n######final reward#####\n{reward}')    #for testing
-            # print(self.selected_node_list)
+            # print(self.trip_length)
+            # print(f'\n{self.trip_length}\n{self.selected_node_list[0,2]}\n{self.prize_list[0,0]}\nprizes:   {reward[0,2]}\n')
         else:
             reward = None
-
-        # return self.step_state, reward, self.prize_per_day, done
-        return self.step_state, reward, done
+        
+        if self.test_stage:
+            return self.step_state, reward, self.prize_per_day, done
+        else:
+            return self.step_state, reward, done
 
 
     def calculate_len_to_depot(self) :

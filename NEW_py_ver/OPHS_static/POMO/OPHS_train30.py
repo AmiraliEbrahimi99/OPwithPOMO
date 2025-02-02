@@ -8,7 +8,7 @@ warnings.filterwarnings("ignore", category=FutureWarning, message=".*torch.backe
 
 # Machine Environment Config
 
-DEBUG_MODE = False
+DEBUG_MODE = True
 USE_CUDA = not DEBUG_MODE
 CUDA_DEVICE_NUM = 0
 
@@ -35,15 +35,18 @@ from OPHSTrainer import OPHSTrainer as Trainer
 
 ##########################################################################################
 # parameters
-
+stochastic_prize = False
 env_params = {
-    'problem_size': 100,
-    'pomo_size': 100,
-    'day_number': 10,
-    'hotel_size': 17,
+    'problem_size': 32,
+    'pomo_size': 32,
+    'day_number': 3,
+    'hotel_size': 7,
+    'test_stage': False,
+    'stochastic_prize': stochastic_prize
 }
 
 model_params = {
+    'stochastic_prize': stochastic_prize,
     'embedding_dim': 128,
     'sqrt_embedding_dim': 128**(1/2),
     'encoder_layer_num': 6,
@@ -128,7 +131,7 @@ def _set_debug_mode():
     global trainer_params
     trainer_params['epochs'] = 1
     trainer_params['train_episodes'] = 1
-    trainer_params['train_batch_size'] = 2
+    trainer_params['train_batch_size'] = 1
 
 
 def _print_config():
