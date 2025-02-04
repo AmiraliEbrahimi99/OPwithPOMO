@@ -13,7 +13,7 @@ def process_ophs_file(filepath, output_dir):
         lines = f.readlines()
 
     # Extract the remaining_len from the third line
-    remaining_length = list(map(float, lines[1].split()[:3]))
+    remaining_length = list(map(float, lines[1].split()))
     remaining_length_tensor = torch.tensor(remaining_length)
 
     # Initialize tensors for node xy and prizes
@@ -56,11 +56,10 @@ def process_ophs_file(filepath, output_dir):
     # Rescale remain_length based on the same scaling factors used for node coordinates
     remaining_length_rescaled = remaining_length_tensor / torch.tensor([x_max - x_min, y_max - y_min]).max()
 
-    # print("\nRemaining lenth rescaled:", remaining_length_rescaled)
+    print("\nRemaining lenth rescaled:", remaining_length_rescaled)
     # print("Hotel xy rescaled tensor:", hotel_xy_rescaled)
     # print("Node xy rescaled tensor:", node_xy_rescaled)
     # print("Prize rescaled tensor:", prize_rescaled)
-    # print(f"deviation not scaled:{deviation_generator} deviation rescaled: {rescaled_deviation}")
 
     remaining_len = remaining_length_rescaled.unsqueeze(0)
     hotel_xy = hotel_xy_rescaled.unsqueeze(0)
@@ -76,8 +75,8 @@ def process_ophs_file(filepath, output_dir):
     }
 
     # Save the dictionary to a file
-    output_filename = os.path.join(output_dir, os.path.basename(filepath).replace('.ophs', '.pt'))
-    torch.save(saved_dict, output_filename)
+    # output_filename = os.path.join(output_dir, os.path.basename(filepath).replace('.ophs', '.pt'))
+    # torch.save(saved_dict, output_filename)
 
 
 def process_ophssp_file(filepath, output_dir):
@@ -231,15 +230,16 @@ def ophssp_create_new_file(filepath, output_dir):
 
 ###########################################################################################################################
 
-root_dir = "Instances/raw_OPHSSP_instances_high_variance"
-output_dir = "Instances/OPHSSP_high_variance_pt"
+root_dir = "Instances/raw_OPHS_instances/SET2 6-4/T1-85-6-4.ophs"
+output_dir = "Instances"
 # output_dir = "Instances/OPHSSP"
 os.makedirs(output_dir, exist_ok=True)
 
-for filepath in glob.glob(os.path.join(root_dir, "**/*.ophs"), recursive=True):
-    process_ophssp_file(filepath, output_dir)
+# for filepath in glob.glob(os.path.join(root_dir, "**/*.ophs"), recursive=True):
+#     process_ophssp_file(filepath, output_dir)
 
 ################ test #############################
 
 # ophssp_create_new_file(root_dir, output_dir)
 # process_ophssp_file(root_dir, output_dir)
+process_ophs_file(root_dir, output_dir)

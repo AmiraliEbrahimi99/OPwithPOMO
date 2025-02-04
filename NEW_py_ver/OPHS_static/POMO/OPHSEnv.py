@@ -40,7 +40,6 @@ class OPHSEnv:
         self.hotel_size = env_params['hotel_size']                      # new input
         self.day_number = env_params['day_number']                      # new input
         self.stochastic_prize = env_params['stochastic_prize']
-        self.test_stage = env_params['test_stage']
         
         self.FLAG__use_saved_problems = False
         self.saved_depot_xy = None
@@ -203,7 +202,6 @@ class OPHSEnv:
         self.depots_ninf_mask = torch.zeros(size=(self.batch_size, self.pomo_size, self.day_number+1))             #new 
         #shape: (batch, pomo, day)
         self.depots_ninf_mask[:, :, :] = float('-inf')
-        self.prize_per_day = []
         self.previous_prize = None
         self.flag = True
         self.finishing_depot_index = 1
@@ -346,15 +344,6 @@ class OPHSEnv:
             # shape: (batch, pomo)
             mask = self.at_the_depot & (self.day_finished < self.day_number)                                        # mask for length reset
             self.remaining_len[mask] = self.trip_length_extracted[mask] 
-            
-            #prize for each day
-            if self.previous_prize is None:
-                self.prize_per_day.append(self.collected_prize.clone())
-            else:
-                difference = self.collected_prize - self.previous_prize
-                self.prize_per_day.append(difference)
-            
-            self.previous_prize = self.collected_prize.clone()
 
             if self.finishing_depot_index < self.day_number:
                 self.finishing_depot_index += 1
@@ -388,10 +377,7 @@ class OPHSEnv:
         else:
             reward = None
         
-        if self.test_stage:
-            return self.step_state, reward, self.prize_per_day, done
-        else:
-            return self.step_state, reward, done
+        return self.step_state, reward, done
 
 
     def calculate_len_to_depot(self) :
