@@ -140,14 +140,20 @@ class OPHSEnv:
                 self.batch_size = self.batch_size * 8
                 self.depot_xy = augment_xy_data_by_8_fold(depot_xy)
                 self.node_xy = augment_xy_data_by_8_fold(node_xy)
-                node_prize = node_prize.repeat(8, 1, 1)
                 self.trip_length = self.trip_length.repeat(8, 1)           
+                if self.stochastic_prize:
+                    node_prize = node_prize.repeat(8, 1, 1)
+                else:
+                    node_prize = node_prize.repeat(8, 1)
             elif aug_factor == 16:
                 self.batch_size = self.batch_size * 16
                 self.depot_xy = augment_xy_data_by_16_fold(depot_xy)
                 self.node_xy = augment_xy_data_by_16_fold(node_xy)
-                node_prize = node_prize.repeat(16, 1, 1)
                 self.trip_length = self.trip_length.repeat(16, 1)
+                if self.stochastic_prize:
+                    node_prize = node_prize.repeat(16, 1, 1)
+                else:
+                    node_prize = node_prize.repeat(16, 1)
             else:
                 raise NotImplementedError
                 

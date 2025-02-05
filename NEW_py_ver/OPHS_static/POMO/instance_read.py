@@ -230,13 +230,13 @@ def ophssp_create_new_file(filepath, output_dir):
 
 ###########################################################################################################################
 
-root_dir = "Instances/raw_OPHS_instances/SET2 6-4/T1-85-6-4.ophs"
+root_dir = "Instances/raw_OPHS_instances/SET5 10-5/66-125-10-5.ophs"
 output_dir = "Instances"
 # output_dir = "Instances/OPHSSP"
 os.makedirs(output_dir, exist_ok=True)
 
 # for filepath in glob.glob(os.path.join(root_dir, "**/*.ophs"), recursive=True):
-#     process_ophssp_file(filepath, output_dir)
+#     process_ophs_file(filepath, output_dir)
 
 ################ test #############################
 
