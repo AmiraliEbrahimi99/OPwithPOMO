@@ -1,32 +1,19 @@
 ##########################################################################################
-import warnings
-warnings.filterwarnings("ignore", message="UserWarning: torch.set_default_tensor_type() is deprecated as of PyTorch 2.1, please use torch.set_default_dtype() and torch.set_default_device() as alternatives")  
+import math, os, sys, time, torch, random, warnings
+import pandas as pd
+import numpy as np
+from scipy.spatial.distance import pdist, squareform
+
 warnings.filterwarnings("ignore", message="You are using `torch.load` with `weights_only=False`")
 
 # Path Config
-
-import math
-import os
-import sys
-import pandas as pd
-
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, "..")  # for problem_def
 sys.path.insert(0, "../..")  # for utils
 
-import time
-import torch
-from scipy.spatial.distance import pdist, squareform
-import numpy as np
-
-import random
-
-import os
 from logging import getLogger
-
 from OPHSEnv import OPHSEnv as Env
 from OPHSModel import OPHSModel as Model
-
 from utils.utils import *
 
 ##########################################################################################
@@ -35,7 +22,6 @@ from utils.utils import *
 DEBUG_MODE = True 
 USE_CUDA = not DEBUG_MODE
 CUDA_DEVICE_NUM = 0
-
 
 ##########################################################################################
 # parameters
@@ -60,7 +46,6 @@ model_params = {
     'eval_type': 'argmax',
 }
 
-
 tester_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
@@ -72,26 +57,13 @@ tester_params = {
     'test_batch_size': 1000,
     'augmentation_enable': False,
     'aug_factor': 8,
-    'aug_batch_size': 1,
     'test_data_load': {
         'enable': True,
         'filename': '../../../Instances/OPHS_pt/66-125-10-5.pt',
         'hotel_swap': True
         # 'order': None  # Add 'order' to hold the hotel order
-
     },
 }
-if tester_params['augmentation_enable']:
-    tester_params['test_batch_size'] = tester_params['aug_batch_size']
-
-
-logger_params = {
-    'log_file': {
-        'desc': 'test_ophs30_static',
-        'filename': 'log.txt'
-    }
-}
-
 
 class OPTester:
     def __init__(self,
@@ -125,10 +97,7 @@ class OPTester:
         # ENV and MODEL
         self.env = Env(**self.env_params)
         self.model = Model(**self.model_params)
-        
-        # if self.tester_params['test_data_load']['enable']:
-        #     self.env.use_saved_problems(self.tester_params['test_data_load']['filename'], self.device, hotel_swap= self.tester_params['test_data_load']['hotel_swap'], order= self.tester_params['test_data_load']['order'])
-        
+               
         # Restore
         model_load = tester_params['model_load']
         checkpoint_fullname = '{path}/checkpoint-{epoch}.pt'.format(**model_load)
@@ -138,7 +107,7 @@ class OPTester:
         # utility
         self.time_estimator = TimeEstimator()
     
-    def run(self, batch_size: int = 1, aug = 1):
+    def run(self, batch_size: int = 1):
         self.reward = None
         done = False
         self.path = {}
@@ -146,7 +115,7 @@ class OPTester:
 
         # Augmentation setup
         aug_factor = self.tester_params['aug_factor'] if self.tester_params['augmentation_enable'] else 1
-        aug_factor= aug
+
         self.model.eval()
         with torch.no_grad():
             self.env.load_problems(batch_size, aug_factor)
@@ -208,65 +177,58 @@ if __name__ == '__main__':
         plt.savefig('test_plot.png', dpi=300)
         # plt.show()
 
-###################################################################################
-  
-    instance_path = r"../../../Instances/raw_OPHS_instances/SET5 10-5/66-125-10-5.ophs"
-
-    def is_valid_line(line):
-        parts = line.strip().split()
-        if len(parts) != 3:
-            return False
-        try:
-            # Try converting all three parts to floats
-            float(parts[0])
-            float(parts[1])
-            float(parts[2])
-            return True
-        except ValueError:
-            return False
-
-    # Read the data from the file
-    with open(instance_path, 'r') as file:
-        # Read the first line for n, h, d
-        first_line = file.readline().strip().split()
-        n = int(first_line[0])  # number of nodes
-        h = int(first_line[1])  # number of hotels
-        day_number = int(first_line[2])  # number of days
-        
-        # Skip the third line (as it's unrelated based on the new structure)
-        file.readline()
-        # Read the second line for t
-        t_max = float(file.readline().split()[0])  # max time
-        # Skip the third line (as it's unrelated based on the new structure)
-        file.readline()
-        # Read the remaining lines and filter only valid numeric lines
-        coordinates_scores = [line.strip().split() for line in file.readlines() if is_valid_line(line)]
-
-    # Convert the x, y, score into separate lists and convert to floats
-    x_coords = [float(line[0]) for line in coordinates_scores]
-    y_coords = [float(line[1]) for line in coordinates_scores]
-    scores = [float(line[2]) for line in coordinates_scores]
-
-    # Calculate the number of nodes
-    hotels_number = h + 2  # Include 2 extra nodes for start and end
-    nodes_number = n + hotels_number - 2  # Total nodes
-
-    # Create index lists for hotels and points of interest
-    all_nodes_index = list(range(nodes_number))
-    hotel_nodes_index = all_nodes_index[:hotels_number]
-
-    # Stack the coordinates into a single array
-    coordinates = np.vstack((x_coords, y_coords)).T
-    # print(coordinates)
-    # Calculate the pairwise distances using pdist
-    distances = pdist(coordinates)
-    # Convert the distance matrix to a squareform matrix
-    distance_matrix = squareform(distances)
     #####################################################   FUNCTIONS   ###################################################################################
 
-    def create_hps_matrix(hotels_number, hotel_nodes_index, all_nodes_index, distance_matrix, scores):
+    def parse_instance(instance_path):
+        
+        def is_valid_line(line):
+            parts = line.strip().split()
+            if len(parts) != 3:
+                return False
+            try:
+                list(map(float, parts))  # Ensure all values are valid floats (handles negatives too)
+                return True
+            except ValueError:
+                return False
             
-        # Making hotel selection probability matrix
+        with open(instance_path, 'r') as file:
+            n, h, day_number = map(int, file.readline().split())  # Read n, h, d
+            file.readline()  # Skip unused line
+            t_max = float(file.readline().split()[0])  # max time
+            file.readline()  # Skip t_max line
+            data = [list(map(float, line.split())) for line in file if is_valid_line(line)]
+
+        x_coords, y_coords, scores = zip(*data)
+        nodes_number = n + h  # Total nodes including hotels
+        hotels_number = h + 2
+        all_nodes_index = list(range(nodes_number))
+        distance_matrix = squareform(pdist(np.column_stack((x_coords, y_coords))))
+        hotel_nodes_index = all_nodes_index[:hotels_number]
+        hps = np.zeros((hotels_number, hotels_number))  # hps = hotel_potential_score
+
+        pair_list = []
+        for i in hotel_nodes_index:
+            for j in hotel_nodes_index:
+                if j >= i:
+                    pair_list.append([i,j])
+
+        for i in pair_list:
+            a = i[0]
+            b = i[1]
+            for node_i in all_nodes_index:
+                total_pair_distance = distance_matrix[node_i][a] + distance_matrix[node_i][b]
+                if total_pair_distance <= t_max:
+                    hps[a,b] += scores[node_i]
+                    if a != b: 
+                        hps[b,a] += scores[node_i]
+
+        hps = torch.tensor(hps)  # Convert to tensor
+
+        return hps, scores, hotels_number, day_number 
+    
+    def create_hps_matrix(t_max, hotels_number, all_nodes_index, distance_matrix, scores):
+            
+        hotel_nodes_index = all_nodes_index[:hotels_number]
         hps = np.zeros((hotels_number, hotels_number))  # hps = hotel_potential_score
 
         pair_list = []
@@ -307,7 +269,7 @@ if __name__ == '__main__':
             order += sequence[i + 1] * (h ** i)  # Use i + 1 to skip the start point (0)
         return order
 
-    def RL_inference(input_order, augmentation_factor: int = 1):
+    def RL_inference(input_order, node_scores):
 
         self = OPTester(env_params=env_params, model_params=model_params, tester_params=tester_params)
 
@@ -321,13 +283,15 @@ if __name__ == '__main__':
         if self.tester_params['augmentation_enable']:
             aug_factor = self.tester_params['aug_factor']
         else:
-            aug_factor = augmentation_factor
+            aug_factor = 1
 
-        self.run(batch_size=1, aug=aug_factor)
+        self.run(batch_size=1)
 
         pomo = torch.argmax(self.reward, dim=1)
-        complete_orders = []
-        # complete_order = torch.tensor((aug_factor, 0), dtype=torch.int64)
+        node_scores = torch.tensor(node_scores, dtype=torch.float32)
+
+        best_score = -float('inf')  # Track the best collected score
+        best_order = None  # Track the best order sequence
 
         for batch_idx in range(aug_factor):
             batch_order = [int(self.path[i][batch_idx][pomo[batch_idx]]) for i in self.path]
@@ -337,40 +301,22 @@ if __name__ == '__main__':
                 if value not in cleaned_solution:
                     cleaned_solution.append(value)
 
-            complete_orders.append(torch.tensor(cleaned_solution, dtype=torch.int64))  
+            complete_order = torch.tensor(cleaned_solution, dtype=torch.int64)
+            collected_score = node_scores[complete_order].sum().item()
 
-            # complete_order = torch.tensor(cleaned_solution, dtype=torch.int64)  
-            # complete_order[batch_idx, :] = cleaned_solution
-            # complete_orders.append(cleaned_solution)
-            # complete_order = torch.tensor(complete_orders, dtype=torch.object).reshape(8, 1)
-
-            # if aug_factor > 1:
-            #     complete_order.append(cleaned_solution)
-            # else:
-            #     complete_order = cleaned_solution
-
-        return complete_orders
-
-        # complete_order = torch.tensor(complete_order, dtype=torch.int64)
-            # if aug_factor == 8 or aug_factor == 16:
-            #     print(scores)
-    def calculate_scores(node_scores, complete_order, aug_factor: int = 1):
-                
-        node_scores = torch.tensor(node_scores, dtype=torch.float32)
-        for aug in range(aug_factor):
-            complete_order = complete_order[aug]
-            scores = node_scores[complete_order].sum().item()  # Convert to Python float
-            if scores > collected_score:
-                collected_score = scores
+            if collected_score > best_score:
+                best_score = collected_score
+                best_order = complete_order
 
         h = (node_scores == 0).nonzero().squeeze()[-1] + 1  # Number of hotels
-        hotel_visits = (complete_order < h).nonzero().squeeze()
+        hotel_visits = (best_order < h).nonzero().squeeze()
+
         score_per_day = torch.tensor([
-            node_scores[complete_order[hotel_visits[i] + 1 : hotel_visits[i + 1]]].sum()
+            node_scores[best_order[hotel_visits[i] + 1 : hotel_visits[i + 1]]].sum()
             for i in range(len(hotel_visits) - 1)
         ], dtype=torch.float32)
 
-        return collected_score, score_per_day
+        return best_order, best_score, score_per_day
 
     def simulated_annealing(hps, n_days, initial_solution=None, T0=1000, T_min=0.1, alpha=0.99):
 
@@ -469,82 +415,68 @@ if __name__ == '__main__':
 
         return trip
     
-    def augment_xy_data_by_8_fold(xy_data):
-        # xy_data.shape: (N, 2)
-        xy_data_expanded = xy_data.unsqueeze(dim=0)
+    def update_hps(hps, hotel_order, prize_per_day, updated_mask):
 
-        x = xy_data_expanded[:, :, [0]]
-        y = xy_data_expanded[:, :, [1]]
-        # x,y shape: (N, 1)
+        for day in range(len(prize_per_day)):
+            from_hotel, to_hotel, prize = hotel_order[day], hotel_order[day + 1], prize_per_day[day]
 
-        dat1 = torch.cat((x, y), dim=2)
-        dat2 = torch.cat((1 - x, y), dim=2)
-        dat3 = torch.cat((x, 1 - y), dim=2)
-        dat4 = torch.cat((1 - x, 1 - y), dim=2)
-        dat5 = torch.cat((y, x), dim=2)
-        dat6 = torch.cat((1 - y, x), dim=2)
-        dat7 = torch.cat((y, 1 - x), dim=2)
-        dat8 = torch.cat((1 - y, 1 - x), dim=2)
+            if not updated_mask[from_hotel, to_hotel]:  # First-time update
+                hps[from_hotel, to_hotel] = prize
+                hps[to_hotel, from_hotel] = prize
+                updated_mask[from_hotel, to_hotel] = True
+                updated_mask[to_hotel, from_hotel] = True
+            else:  # Subsequent updates only if the prize is greater
+                hps[from_hotel, to_hotel] = max(hps[from_hotel, to_hotel], prize)
+                hps[to_hotel, from_hotel] = max(hps[to_hotel, from_hotel], prize)
+        return hps, updated_mask
 
-        aug_xy_data = torch.cat((dat1, dat2, dat3, dat4, dat5, dat6, dat7, dat8), dim=0)
-        # shape: (8, N, 2)
+    def best_solution_augmentation(input_order, node_scores, augmentation_factor: int = 1):
+        self = OPTester(env_params=env_params, model_params=model_params, tester_params=tester_params)
 
-        return aug_xy_data
-    
-    def augment_xy_data_by_16_fold(xy_data):
-        # xy_data.shape: (N, 2)
-        xy_data_expanded = xy_data.unsqueeze(dim=0)
+        if self.tester_params['test_data_load']['enable']:
+            self.env.use_saved_problems(
+                self.tester_params['test_data_load']['filename'], 
+                self.device, 
+                hotel_swap=self.tester_params['test_data_load']['hotel_swap'], 
+                order=input_order  # Ensure order is passed here
+            )
+        self.tester_params['augmentation_enable'] = True
+        self.tester_params['aug_factor'] = augmentation_factor
+        
+        self.run(batch_size=1)
 
-        x = xy_data_expanded[:, :, [0]]
-        y = xy_data_expanded[:, :, [1]]
-        # x,y shape: (N, 1)
+        pomo = torch.argmax(self.reward, dim=1)
+        node_scores = torch.tensor(node_scores, dtype=torch.float32)
+        complete_orders = []
 
-        dat1 = torch.cat((x, y), dim=2)
-        dat2 = torch.cat((1 - x, y), dim=2)
-        dat3 = torch.cat((x, 1 - y), dim=2)
-        dat4 = torch.cat((1 - x, 1 - y), dim=2)
-        dat5 = torch.cat((y, x), dim=2)
-        dat6 = torch.cat((1 - y, x), dim=2)
-        dat7 = torch.cat((y, 1 - x), dim=2)
-        dat8 = torch.cat((1 - y, 1 - x), dim=2)
+        for batch_idx in range(augmentation_factor):
+            batch_order = [int(self.path[i][batch_idx][pomo[batch_idx]]) for i in self.path]
 
-        dat9 = torch.cat((-x, -y), dim=2)
-        dat10 = torch.cat((2 - x, y), dim=2)
-        dat11 = torch.cat((x, 2 - y), dim=2)
-        dat12 = torch.cat((2 - x, 2 - y), dim=2)
-        dat13 = torch.cat((-y, -x), dim=2)
-        dat14 = torch.cat((2 - y, x), dim=2)
-        dat15 = torch.cat((y, 2 - x), dim=2)
-        dat16 = torch.cat((2 - y, 2 - x), dim=2)
+            cleaned_solution = []
+            for value in batch_order:
+                if value not in cleaned_solution:
+                    cleaned_solution.append(value)
 
-        aug_xy_data = torch.cat((dat1, dat2, dat3, dat4, dat5, dat6, dat7, dat8, dat9, dat10, dat11, dat12, dat13, dat14, dat15, dat16), dim=0)
-        # shape: (16, N, 2)
+            # complete_orders = torch.tensor(cleaned_solution, dtype=torch.int64) 
+            collected_score = node_scores[torch.tensor(cleaned_solution, dtype=torch.int64)].sum().item()  # Convert to Python float
+            print(f'Aug {batch_idx} score : {collected_score}')
+        
+        # return complete_orders
 
-        return aug_xy_data
-    
     #####################################################   Main loop   ###################################################################################
     
-    # Function to run the optimization multiple times and store results
-    def run_repeats_and_save(hps, hotel_size, n_days, max_no_improve_values, repeats, output_file):
+    def run_repeats_and_save(hps, hotel_size, n_days, max_no_improve_values, repeats, scores, output_file):
         results = []
 
-        # Loop over different max_no_improve values
         for max_no_improve in max_no_improve_values:
             print(f"\nRunning for max_no_improve = {max_no_improve}\n")
 
-            # Repeat the optimization for the given number of repeats
             for repeat in range(repeats):
 
                 start_time = time.time()
-                best_order, best_score, best_solution, final_hps, each_iter, rate_of_improvement, percentage_of_improvement = optimize_trip(hps.clone(), hotel_size, n_days, max_no_improve)
+                best_order, best_score, best_solution, final_hps, each_iter = optimize_trip(hps.clone(), hotel_size, n_days, scores, max_no_improve)
                 end_time = time.time()
                 runtime = end_time - start_time
-
-                total_indices = hps.numel()                   # Total number of elements
-                print('\n\nimproved indices', each_iter)
-                print('total indices ==', total_indices)
-                print('best score', best_score)
-                # metric = same_indices / total_indices
 
                 # Save results for this repeat
                 results.append({
@@ -552,73 +484,52 @@ if __name__ == '__main__':
                     "Repeat": repeat + 1,
                     "Final_Score": best_score,
                     "Runtime": runtime,
-                    # "Percentage_of_Unchanged_indexes": metric*100,
-                    # "Iterations_to_Convergence": iterations_to_convergence,
-                    "Percentage_of_Improvement": percentage_of_improvement,
+                    "Improvement_each_iter": each_iter,
                 })
 
-        the_best_solution  = RL_inference(best_order, augmentation_factor= 8)
-        final_best_score, _ = calculate_scores(scores, the_best_solution, aug_factor= 8)
+        # the_best_solution  = RL_inference(best_order, augmentation_factor= 8)
+        # final_best_score, _ = calculate_scores(scores, the_best_solution, aug_factor= 8)
 
-        # Convert results to a DataFrame
         df = pd.DataFrame(results)
 
-        # Compute summary statistics
         summary = df.groupby("Max_No_Improve").agg(
             Mean_Final_Score=("Final_Score", "mean"),
+            Max_Final_Score=("Final_Score", "max"),
+            Min_Final_Score=("Final_Score", "min"),
             Mean_Runtime=("Runtime", "mean"),
-            # Mean_Iter_to_Convergence=("Iterations_to_Convergence", "mean"),
-            # Mean_perc_Unchanged_indexes=("Percentage_of_Unchanged_indexes", "mean"),
-            Mean_Perc_Improvement=("Percentage_of_Improvement", "mean"),
+            Max_Runtime=("Runtime", "max"),
+            Min_Runtime=("Runtime", "min"),
         ).reset_index()
 
-        # Save raw results and summary to an Excel file
         # with pd.ExcelWriter(output_file) as writer:
         #     df.to_excel(writer, index=False, sheet_name="Raw Results")
         #     summary.to_excel(writer, index=False, sheet_name="Summary Statistics")
 
-        # print(f"Results saved to {output_file}")
-        print(summary)
-        print(f'\n after aug:{final_best_score}')
+        print(df, summary)
+        print(f"Results saved to {output_file}")
+        # best_solution_augmentation(best_order, best_score, scores, augmentation_factor = 16)
 
-    def optimize_trip(hps, hotel_size, n_days, max_no_improve=5):
+    def optimize_trip(hps, hotel_size, n_days, scores, max_no_improve=5):
 
-        hotel_order = simulated_annealing(hps, n_days)  # Get hotel order
-        best_order_number = sequence_to_order(hotel_order, hotel_size)  # Convert sequence to order
-        complete_solution = RL_inference(best_order_number)
-        best_score, prize_per_day = calculate_scores(scores, complete_solution)
-        # print(hps,hotel_order, best_score, prize_per_day)
-        best_order = best_order_number
-        best_complete_solution = complete_solution
+        hotel_order = simulated_annealing(hps, n_days)  
+        best_order = sequence_to_order(hotel_order, hotel_size)  
+        best_complete_solution, best_score, prize_per_day = RL_inference(best_order, scores)
+
         no_improve_count = 0
-        updated_mask = torch.zeros_like(hps, dtype=torch.bool)  # Initialize the updated mask
+        updated_mask = torch.zeros_like(hps, dtype=torch.bool)  
         scores_history = [best_score] 
         improvement_each_iter = []
 
         while no_improve_count < max_no_improve:
-            hps_old = hps.clone()
-            for day in range(len(prize_per_day)):
-                from_hotel = hotel_order[day]
-                to_hotel = hotel_order[day + 1]
-                prize = prize_per_day[day]
 
-                if not updated_mask[from_hotel, to_hotel]:  # First-time update
-                    hps[from_hotel, to_hotel] = prize
-                    hps[to_hotel, from_hotel] = prize
-                    updated_mask[from_hotel, to_hotel] = True
-                    updated_mask[to_hotel, from_hotel] = True
-                else:       # Subsequent updates only if the prize is greater 
-                    hps[from_hotel, to_hotel] = max(hps[from_hotel, to_hotel], prize)
-                    hps[to_hotel, from_hotel] = max(hps[to_hotel, from_hotel], prize)
+            previous_hps = hps.clone()
+            hps, updated_mask = update_hps(hps, hotel_order, prize_per_day, updated_mask)
 
-            # print(f'\n\nhps:{hps}\n same indices: {same_indices}\n')
-            hotel_order = simulated_annealing(hps.clone(), n_days)  # Get new hotel order
-            new_order_number = sequence_to_order(hotel_order, hps.size(0))  # Convert sequence to order
-            complete_solution  = RL_inference(new_order_number)
-            new_score, prize_per_day = calculate_scores(scores, complete_solution)
-            print(hotel_order, new_score)
-            # print()
-            # print(complete_solution, best_score, prize_per_day)
+            hotel_order = simulated_annealing(hps.clone(), n_days)  
+            new_order_number = sequence_to_order(hotel_order, hps.size(0))  
+            complete_solution, new_score, prize_per_day  = RL_inference(new_order_number, scores)
+            # print(hotel_order, new_score)
+
             scores_history.append(new_score)
 
             if new_score > best_score:
@@ -627,30 +538,28 @@ if __name__ == '__main__':
             else:
                 no_improve_count += 1 
 
-            same_indices = (hps_old != hps).sum().item()  
-            # print(f'\nold hps: {hps_old}\nhps:{hps}\n same indices: {same_indices}\n')
-            improvement_each_iter.append(same_indices)
+            improvement_each_iter.append((previous_hps != hps).sum().item())
 
-        iterations_to_convergence = len(scores_history) - max_no_improve
-        rate_of_improvement = (best_score - scores_history[0]) / iterations_to_convergence
-        precentage_rate_of_improvement = (best_score - scores_history[0]) / (scores_history[0])
-        return best_order, best_score, best_complete_solution, hps, improvement_each_iter, rate_of_improvement, precentage_rate_of_improvement
+        return best_order, best_score, best_complete_solution, hps, improvement_each_iter
 
-    ####################################### testing #######################
+    ####################################### testing #############################################################################################
 
-    # hps = create_hps_matrix(hotels_number, hotel_nodes_index, all_nodes_index, distance_matrix, scores)
-    # hps_old = hps.clone()
-    # start_time = time.time()
-    # order_number, reward, solution, final_hps, iteration, rate, p = optimize_trip(hps, hotels_number, day_number, max_no_improve=10)
-    # end_time = time.time()
-    # runtime = end_time - start_time
+    instance_path = r"../../../Instances/raw_OPHS_instances/SET5 10-5/66-125-10-5.ophs"
+    max_no_improve_values = [10]
+    # max_no_improve_values = [5, 10, 20, 50, 100]
+    repeats = 2
+    output_file = "output_results/test111.xlsx"
+    
+    hps, score, hotels_number, day_number = parse_instance(instance_path)
+    run_repeats_and_save(hps, hotels_number, day_number, max_no_improve_values, repeats, score, output_file)
 
-    # hotel_sequence = order_to_sequence(order_number, hotels_number, day_number-1)
 
-    # cleaned_solution = []
-    # for value in solution:
-    #     if value not in cleaned_solution:
-    #         cleaned_solution.append(value)
+
+
+
+
+
+######################################################## backup #########################################
 
     # mapping = {i: hotel_sequence[i] for i in range(len(hotel_sequence))}
     # clean_solution = [mapping[value] if value in mapping else value for value in cleaned_solution]
@@ -659,20 +568,7 @@ if __name__ == '__main__':
     # total_indices = hps.numel()                   # Total number of elements
     # metric = same_indices / total_indices
 
-    # print(f"\n {same_indices}/{total_indices} did not change ({metric*100}%)")
-    # print(f"\n first hps:\n {hps_old}\n final hps:\n {final_hps}\n\n iter:{iteration}\n rate:{rate}\n per:{p}%\n Sequence: {hotel_sequence}\n total reward: {reward}\n raw solution:   {solution}\n final solution: {clean_solution}\n Runtime: {runtime} seconds\n")
-
     # plot_trip(solution, hotels_number, hotel_sequence, coordinates, scores)
     # trip = greedy_trip_with_exploration(hps,day_number)
     # order = sequence_to_order(trip, hotels_number)
 #################################################################################################
-    max_no_improve_values = [5]
-    # max_no_improve_values = [5, 10, 20, 50, 100]
-    repeats = 1
-    output_file = "output_results/test.xlsx"
-    hps = create_hps_matrix(hotels_number, hotel_nodes_index, all_nodes_index, distance_matrix, scores)
-    
-    # Run the experiment
-    run_repeats_and_save(hps, hotels_number, day_number, max_no_improve_values, repeats, output_file)
-
-    # print(distance_matrix)
