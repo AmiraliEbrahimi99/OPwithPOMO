@@ -251,13 +251,13 @@ if __name__ == '__main__':
 
         return hps
     
-    def order_to_sequence(order, N, K):
+    def order_to_sequence(order, h, n_day):
         sequence = [0]  # Start with the fixed start point
         current_order = order
-        for _ in range(K):
-            point = current_order % N
+        for _ in range(n_day - 1):
+            point = current_order % h
             sequence.append(point)
-            current_order //= N
+            current_order //= h
         sequence.append(1)  # Add the fixed end point
         return sequence
 
@@ -318,7 +318,7 @@ if __name__ == '__main__':
 
         return best_order, best_score, score_per_day
 
-    def simulated_annealing(hps, n_days, initial_solution=None, T0=1000, T_min=0.1, alpha=0.99):
+    def simulated_annealing(hps, n_days, initial_solution=None, T0=10000, T_min=0.01, alpha=0.99):
 
         def evaluate(solution):
             score = 0
@@ -447,7 +447,9 @@ if __name__ == '__main__':
 
         pomo = torch.argmax(self.reward, dim=1)
         node_scores = torch.tensor(node_scores, dtype=torch.float32)
-        complete_orders = []
+
+        best_score = -float('inf') 
+        best_order = None  
 
         for batch_idx in range(augmentation_factor):
             batch_order = [int(self.path[i][batch_idx][pomo[batch_idx]]) for i in self.path]
@@ -457,11 +459,14 @@ if __name__ == '__main__':
                 if value not in cleaned_solution:
                     cleaned_solution.append(value)
 
-            # complete_orders = torch.tensor(cleaned_solution, dtype=torch.int64) 
-            collected_score = node_scores[torch.tensor(cleaned_solution, dtype=torch.int64)].sum().item()  # Convert to Python float
-            print(f'Aug {batch_idx} score : {collected_score}')
+            complete_order = torch.tensor(cleaned_solution, dtype=torch.int64)
+            collected_score = node_scores[complete_order].sum().item()
+
+            if collected_score > best_score:
+                best_score = collected_score
+                best_order = complete_order
         
-        # return complete_orders
+        return best_order, best_score
 
     #####################################################   Main loop   ###################################################################################
     
@@ -474,44 +479,51 @@ if __name__ == '__main__':
             for repeat in range(repeats):
 
                 start_time = time.time()
-                best_order, best_score, best_solution, final_hps, each_iter = optimize_trip(hps.clone(), hotel_size, n_days, scores, max_no_improve)
+                best_order, best_score, best_solution, final_hps, each_iter, iter_to_converge = optimize_trip(hps.clone(), hotel_size, n_days, scores)
                 end_time = time.time()
                 runtime = end_time - start_time
 
                 # Save results for this repeat
                 results.append({
-                    "Max_No_Improve": max_no_improve,
                     "Repeat": repeat + 1,
                     "Final_Score": best_score,
                     "Runtime": runtime,
                     "Improvement_each_iter": each_iter,
+                    "iteration_to_converge":iter_to_converge,
+                    "Best_solution": best_solution.tolist(),
                 })
-
-        # the_best_solution  = RL_inference(best_order, augmentation_factor= 8)
-        # final_best_score, _ = calculate_scores(scores, the_best_solution, aug_factor= 8)
 
         df = pd.DataFrame(results)
 
-        summary = df.groupby("Max_No_Improve").agg(
+        summary = df.groupby("Repeat").agg(
             Mean_Final_Score=("Final_Score", "mean"),
             Max_Final_Score=("Final_Score", "max"),
             Min_Final_Score=("Final_Score", "min"),
             Mean_Runtime=("Runtime", "mean"),
             Max_Runtime=("Runtime", "max"),
             Min_Runtime=("Runtime", "min"),
+            Mean_iter_to_converge = ("iteration_to_converge", "mean"),
         ).reset_index()
 
-        # with pd.ExcelWriter(output_file) as writer:
-        #     df.to_excel(writer, index=False, sheet_name="Raw Results")
-        #     summary.to_excel(writer, index=False, sheet_name="Summary Statistics")
+        best_solution_df = df.loc[df["Final_Score"].idxmax(), ["Repeat", "Best_solution"]]
+        sequence = order_to_sequence(best_order, hotel_size, n_days)
 
-        print(df, summary)
-        print(f"Results saved to {output_file}")
-        # best_solution_augmentation(best_order, best_score, scores, augmentation_factor = 16)
+        mapping = {i: sequence[i] for i in range(len(sequence))}
+        final_sequence = [mapping[value] if value in mapping else value for value in best_solution_df["Best_solution"]]
 
-    def optimize_trip(hps, hotel_size, n_days, scores, max_no_improve=5):
+        summary["Final_Sequence"] = None
+        summary.loc[0, "Final_Sequence"] = str(final_sequence)  # Assign only to the first row
 
-        hotel_order = simulated_annealing(hps, n_days)  
+        with pd.ExcelWriter(output_file) as writer:
+            df.to_excel(writer, index=False, sheet_name="Raw Results")
+            summary.to_excel(writer, index=False, sheet_name="Summary Statistics")
+
+        print(f"\nResults saved to {output_file}\n")
+        # print(df, summary)
+
+    def optimize_trip(hps, hotel_size, n_days, scores, max_no_improve=10):
+
+        hotel_order = greedy_trip_with_exploration(hps, n_days)  
         best_order = sequence_to_order(hotel_order, hotel_size)  
         best_complete_solution, best_score, prize_per_day = RL_inference(best_order, scores)
 
@@ -525,8 +537,8 @@ if __name__ == '__main__':
             previous_hps = hps.clone()
             hps, updated_mask = update_hps(hps, hotel_order, prize_per_day, updated_mask)
 
-            hotel_order = simulated_annealing(hps.clone(), n_days)  
-            new_order_number = sequence_to_order(hotel_order, hps.size(0))  
+            hotel_order = greedy_trip_with_exploration(hps.clone(), n_days)  
+            new_order_number = sequence_to_order(hotel_order, hotel_size)  
             complete_solution, new_score, prize_per_day  = RL_inference(new_order_number, scores)
             # print(hotel_order, new_score)
 
@@ -540,15 +552,16 @@ if __name__ == '__main__':
 
             improvement_each_iter.append((previous_hps != hps).sum().item())
 
-        return best_order, best_score, best_complete_solution, hps, improvement_each_iter
+        best_complete_solution, best_score =  best_solution_augmentation(best_order, scores, augmentation_factor = 16)    #Augment the final results
+        iterations_to_convergence = len(scores_history) - max_no_improve
+        return best_order, best_score, best_complete_solution, hps, improvement_each_iter, iterations_to_convergence
 
     ####################################### testing #############################################################################################
 
     instance_path = r"../../../Instances/raw_OPHS_instances/SET5 10-5/66-125-10-5.ophs"
-    max_no_improve_values = [10]
-    # max_no_improve_values = [5, 10, 20, 50, 100]
-    repeats = 2
-    output_file = "output_results/test111.xlsx"
+    max_no_improve_values = [20]
+    repeats = 1
+    output_file = "output_results/66-125-10-5.xlsx"
     
     hps, score, hotels_number, day_number = parse_instance(instance_path)
     run_repeats_and_save(hps, hotels_number, day_number, max_no_improve_values, repeats, score, output_file)
@@ -556,13 +569,7 @@ if __name__ == '__main__':
 
 
 
-
-
-
 ######################################################## backup #########################################
-
-    # mapping = {i: hotel_sequence[i] for i in range(len(hotel_sequence))}
-    # clean_solution = [mapping[value] if value in mapping else value for value in cleaned_solution]
 
     # same_indices = (hps_old == hps).sum().item()  # Count matching elements
     # total_indices = hps.numel()                   # Total number of elements
