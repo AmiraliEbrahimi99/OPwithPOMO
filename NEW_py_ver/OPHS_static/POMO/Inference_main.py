@@ -55,8 +55,8 @@ tester_params = {
     },
     'test_episodes': 10*1000,
     'test_batch_size': 1000,
-    'augmentation_enable': False,
-    'aug_factor': 8,
+    'augmentation_enable': True,
+    # 'aug_factor': 16,
     'test_data_load': {
         'enable': True,
         'filename': '../../../Instances/OPHS_pt/66-125-10-5.pt',
@@ -303,7 +303,6 @@ if __name__ == '__main__':
 
             complete_order = torch.tensor(cleaned_solution, dtype=torch.int64)
             collected_score = node_scores[complete_order].sum().item()
-
             if collected_score > best_score:
                 best_score = collected_score
                 best_order = complete_order
@@ -470,11 +469,12 @@ if __name__ == '__main__':
 
     #####################################################   Main loop   ###################################################################################
     
-    def run_repeats_and_save(hps, hotel_size, n_days, max_no_improve_values, repeats, scores, output_file):
+    def run_repeats_and_save(hps, hotel_size, n_days, repeats, scores, output_file):
         results = []
 
-        for max_no_improve in max_no_improve_values:
-            print(f"\nRunning for max_no_improve = {max_no_improve}\n")
+        for factor in augmentation_factors:
+            print(f"\nRunning for aug = {factor}\n")
+            tester_params['aug_factor'] = factor
 
             for repeat in range(repeats):
 
@@ -485,6 +485,7 @@ if __name__ == '__main__':
 
                 # Save results for this repeat
                 results.append({
+                    "aug_factor": factor,
                     "Repeat": repeat + 1,
                     "Final_Score": best_score,
                     "Runtime": runtime,
@@ -495,7 +496,7 @@ if __name__ == '__main__':
 
         df = pd.DataFrame(results)
 
-        summary = df.groupby("Repeat").agg(
+        summary = df.groupby("aug_factor").agg(
             Mean_Final_Score=("Final_Score", "mean"),
             Max_Final_Score=("Final_Score", "max"),
             Min_Final_Score=("Final_Score", "min"),
@@ -505,7 +506,7 @@ if __name__ == '__main__':
             Mean_iter_to_converge = ("iteration_to_converge", "mean"),
         ).reset_index()
 
-        best_solution_df = df.loc[df["Final_Score"].idxmax(), ["Repeat", "Best_solution"]]
+        best_solution_df = df.loc[df["Final_Score"].idxmax(), ["aug_factor", "Best_solution"]]
         sequence = order_to_sequence(best_order, hotel_size, n_days)
 
         mapping = {i: sequence[i] for i in range(len(sequence))}
@@ -521,7 +522,7 @@ if __name__ == '__main__':
         print(f"\nResults saved to {output_file}\n")
         # print(df, summary)
 
-    def optimize_trip(hps, hotel_size, n_days, scores, max_no_improve=10):
+    def optimize_trip(hps, hotel_size, n_days, scores, max_no_improve=20):
 
         hotel_order = greedy_trip_with_exploration(hps, n_days)  
         best_order = sequence_to_order(hotel_order, hotel_size)  
@@ -552,19 +553,20 @@ if __name__ == '__main__':
 
             improvement_each_iter.append((previous_hps != hps).sum().item())
 
-        best_complete_solution, best_score =  best_solution_augmentation(best_order, scores, augmentation_factor = 16)    #Augment the final results
+        # best_complete_solution, best_score =  best_solution_augmentation(best_order, scores, augmentation_factor = 16)    #Augment the final results
         iterations_to_convergence = len(scores_history) - max_no_improve
         return best_order, best_score, best_complete_solution, hps, improvement_each_iter, iterations_to_convergence
 
     ####################################### testing #############################################################################################
 
     instance_path = r"../../../Instances/raw_OPHS_instances/SET5 10-5/66-125-10-5.ophs"
-    max_no_improve_values = [20]
-    repeats = 1
+    # max_no_improve = 20
+    repeats = 20
+    augmentation_factors = [1, 8, 16]
     output_file = "output_results/66-125-10-5.xlsx"
     
     hps, score, hotels_number, day_number = parse_instance(instance_path)
-    run_repeats_and_save(hps, hotels_number, day_number, max_no_improve_values, repeats, score, output_file)
+    run_repeats_and_save(hps, hotels_number, day_number, repeats, score, output_file)
 
 
 
