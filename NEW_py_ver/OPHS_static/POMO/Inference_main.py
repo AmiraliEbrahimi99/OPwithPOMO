@@ -27,10 +27,10 @@ CUDA_DEVICE_NUM = 0
 # parameters
 stochastic_prize = False
 env_params = {
-    'problem_size': 64,
-    'pomo_size': 64,
-    'hotel_size': 12,
-    'day_number': 5,
+    'problem_size': 98,
+    'pomo_size': 98,
+    'hotel_size': 17,
+    'day_number': 6,
     'stochastic_prize': stochastic_prize
 }
 
@@ -50,8 +50,8 @@ tester_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
     'model_load': {
-        'path': './result/ophs_so_64',  # directory path of pre-trained model and log files saved.
-        'epoch': 200,  # epoch number of pre-trained model to laod.
+        'path': './result/ophs_so_100',  # directory path of pre-trained model and log files saved.
+        'epoch': 210,  # epoch number of pre-trained model to laod.
     },
     'test_episodes': 10*1000,
     'test_batch_size': 1000,
@@ -59,7 +59,7 @@ tester_params = {
     # 'aug_factor': 16,
     'test_data_load': {
         'enable': True,
-        'filename': '../../../Instances/OPHS_pt/66-125-10-5.pt',
+        'filename': '../../../Instances/OPHS_pt/100-180-15-6.pt',
         'hotel_swap': True
         # 'order': None  # Add 'order' to hold the hotel order
     },
@@ -269,7 +269,7 @@ if __name__ == '__main__':
             order += sequence[i + 1] * (h ** i)  # Use i + 1 to skip the start point (0)
         return order
 
-    def RL_inference(input_order, node_scores):
+    def RL_inference(input_order, node_scores, n_days):
 
         self = OPTester(env_params=env_params, model_params=model_params, tester_params=tester_params)
 
@@ -303,17 +303,21 @@ if __name__ == '__main__':
 
             complete_order = torch.tensor(cleaned_solution, dtype=torch.int64)
             collected_score = node_scores[complete_order].sum().item()
+
             if collected_score > best_score:
                 best_score = collected_score
                 best_order = complete_order
-
-        h = (node_scores == 0).nonzero().squeeze()[-1] + 1  # Number of hotels
-        hotel_visits = (best_order < h).nonzero().squeeze()
-
-        score_per_day = torch.tensor([
-            node_scores[best_order[hotel_visits[i] + 1 : hotel_visits[i + 1]]].sum()
-            for i in range(len(hotel_visits) - 1)
-        ], dtype=torch.float32)
+            
+            h = (node_scores == 0).nonzero().squeeze()[-1] + 1  # Number of hotels
+        if best_score != 0:
+            hotel_visits = (best_order < h).nonzero().squeeze()
+            score_per_day = torch.tensor([
+                node_scores[best_order[hotel_visits[i] + 1 : hotel_visits[i + 1]]].sum()
+                for i in range(len(hotel_visits) - 1)
+            ], dtype=torch.float32)
+        else:
+            score_per_day = torch.zeros(n_days, dtype=torch.float32)
+            score_per_day[n_days-1] = -1
 
         return best_order, best_score, score_per_day
 
@@ -415,9 +419,16 @@ if __name__ == '__main__':
         return trip
     
     def update_hps(hps, hotel_order, prize_per_day, updated_mask):
+        zero_flag =  torch.all(prize_per_day[:-1] == 0) and prize_per_day[-1] == -1
 
         for day in range(len(prize_per_day)):
+
             from_hotel, to_hotel, prize = hotel_order[day], hotel_order[day + 1], prize_per_day[day]
+            
+            if zero_flag and prize == -1: 
+                hps[from_hotel, to_hotel] = prize
+                updated_mask[from_hotel, to_hotel] = True
+                continue
 
             if not updated_mask[from_hotel, to_hotel]:  # First-time update
                 hps[from_hotel, to_hotel] = prize
@@ -427,6 +438,7 @@ if __name__ == '__main__':
             else:  # Subsequent updates only if the prize is greater
                 hps[from_hotel, to_hotel] = max(hps[from_hotel, to_hotel], prize)
                 hps[to_hotel, from_hotel] = max(hps[to_hotel, from_hotel], prize)
+
         return hps, updated_mask
 
     def best_solution_augmentation(input_order, node_scores, augmentation_factor: int = 1):
@@ -515,18 +527,18 @@ if __name__ == '__main__':
         summary["Final_Sequence"] = None
         summary.loc[0, "Final_Sequence"] = str(final_sequence)  # Assign only to the first row
 
-        with pd.ExcelWriter(output_file) as writer:
-            df.to_excel(writer, index=False, sheet_name="Raw Results")
-            summary.to_excel(writer, index=False, sheet_name="Summary Statistics")
+        # with pd.ExcelWriter(output_file) as writer:
+        #     df.to_excel(writer, index=False, sheet_name="Raw Results")
+        #     summary.to_excel(writer, index=False, sheet_name="Summary Statistics")
 
         print(f"\nResults saved to {output_file}\n")
-        # print(df, summary)
+        print(df, summary)
 
     def optimize_trip(hps, hotel_size, n_days, scores, max_no_improve=20):
 
         hotel_order = greedy_trip_with_exploration(hps, n_days)  
         best_order = sequence_to_order(hotel_order, hotel_size)  
-        best_complete_solution, best_score, prize_per_day = RL_inference(best_order, scores)
+        best_complete_solution, best_score, prize_per_day = RL_inference(best_order, score, n_days)
 
         no_improve_count = 0
         updated_mask = torch.zeros_like(hps, dtype=torch.bool)  
@@ -540,7 +552,7 @@ if __name__ == '__main__':
 
             hotel_order = greedy_trip_with_exploration(hps.clone(), n_days)  
             new_order_number = sequence_to_order(hotel_order, hotel_size)  
-            complete_solution, new_score, prize_per_day  = RL_inference(new_order_number, scores)
+            complete_solution, new_score, prize_per_day  = RL_inference(new_order_number, scores, n_days)
             # print(hotel_order, new_score)
 
             scores_history.append(new_score)
@@ -559,11 +571,11 @@ if __name__ == '__main__':
 
     ####################################### testing #############################################################################################
 
-    instance_path = r"../../../Instances/raw_OPHS_instances/SET5 10-5/66-125-10-5.ophs"
+    instance_path = r"../../../Instances/raw_OPHS_instances/SET5 15-6/100-180-15-6.ophs"
     # max_no_improve = 20
-    repeats = 20
+    repeats = 2
     augmentation_factors = [1, 8, 16]
-    output_file = "output_results/66-125-10-5.xlsx"
+    output_file = "output_results/100-180-15-6.xlsx"
     
     hps, score, hotels_number, day_number = parse_instance(instance_path)
     run_repeats_and_save(hps, hotels_number, day_number, repeats, score, output_file)
