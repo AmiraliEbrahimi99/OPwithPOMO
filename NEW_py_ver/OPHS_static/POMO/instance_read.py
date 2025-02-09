@@ -89,7 +89,7 @@ def process_ophssp_file(filepath, output_dir):
         lines = f.readlines()
 
     # Extract the remaining_len from the third line
-    remaining_length = list(map(float, lines[1].split()[:3]))
+    remaining_length = list(map(float, lines[1].split()))
     remaining_length_tensor = torch.tensor(remaining_length)
 
     # Initialize tensors for node xy and prizes
@@ -174,18 +174,19 @@ def ophssp_create_new_file(filepath, output_dir):
         lines = f.readlines()
 
     # Extract the remaining_len from the third line
-    remaining_length = list(map(float, lines[1].split()[:3]))
-    remaining_length_tensor = torch.tensor(remaining_length)
+    remaining_length = list(map(float, lines[1].split()))
 
     # Initialize tensors for node xy and prizes
     hotel_xy_list = []
     node_xy_list = []
     prizes = []
+    hotel_prizes = []
 
     # Iterate over the lines starting from the fifth line to hotel_size
     for line in lines[3 : (3 + hotel_size)]:
         nums = list(map(float, line.split()))
         hotel_xy_list.append([nums[0], nums[1]])
+        hotel_prizes.append(nums[2])
 
     # Iterate over the lines starting from the fifth line + hotel_size
     for line in lines[(3 + hotel_size) : (3 + hotel_size + problem_size)]:
@@ -193,9 +194,7 @@ def ophssp_create_new_file(filepath, output_dir):
         node_xy_list.append([nums[0], nums[1]])
         prizes.append(nums[2])
 
-    # Convert node xy and prizes to tensors
-    hotel_xy_tensor = torch.tensor(hotel_xy_list)
-    node_xy_tensor = torch.tensor(node_xy_list)
+    hotel_prizes_tensor = torch.tensor(hotel_prizes)
     node_prize_tensor = torch.tensor(prizes)
 
     # Rescale node_prize_tensor to have values between 0.02 and 0.99
@@ -208,18 +207,19 @@ def ophssp_create_new_file(filepath, output_dir):
     rescaled_deviation = ((deviation - 4.5) * (prize_max - prize_min) / (95.5 - 4.5)) + prize_min
     rescaled_variance = (rescaled_deviation) ** 2
 
+    node_variance = torch.cat((hotel_prizes_tensor, rescaled_variance), dim=0)
     # print(f'\n{node_prize_tensor}\n{rescaled_deviation}\n{coefficient_of_variation} \n')
 
     modified_lines = [first_line]  # Include the first line at the beginning
-    modified_lines.extend(lines[:3 + hotel_size])  # Keep the first 3+hotel_size lines unchanged
+    modified_lines.extend(lines[:3])  # Keep the first 3+hotel_size lines unchanged
 
-    for i, line in enumerate(lines[(3 + hotel_size) : (3 + hotel_size + problem_size)]):
+    for i, line in enumerate(lines[(3) : (3 + hotel_size + problem_size)]):
         nums = line.split()
         x = float(nums[0]) if "." in nums[0] else int(nums[0])
         y = float(nums[1]) if "." in nums[1] else int(nums[1])
         z = int(nums[2])  # Always an integer
 
-        formatted_line = f"{x:<7} {y:<7} {z:<4d} {rescaled_variance[i].item():<7.2f}\n"
+        formatted_line = f"{x:<7} {y:<7} {z:<4d} {node_variance[i].item():<7.2f}\n"
         modified_lines.append(formatted_line)
 
     modified_lines.append('-------------------------------------------------------------------\n')
@@ -230,16 +230,16 @@ def ophssp_create_new_file(filepath, output_dir):
 
 ###########################################################################################################################
 
-root_dir = "Instances/raw_OPHS_instances/SET5 10-5/66-125-10-5.ophs"
-output_dir = "Instances"
+root_dir = "Instances/raw_OPHSSP_instances"
+output_dir = "Instances/OPHSSP_pt"
 # output_dir = "Instances/OPHSSP"
 os.makedirs(output_dir, exist_ok=True)
 
-# for filepath in glob.glob(os.path.join(root_dir, "**/*.ophs"), recursive=True):
-#     process_ophs_file(filepath, output_dir)
+for filepath in glob.glob(os.path.join(root_dir, "**/*.ophs"), recursive=True):
+    process_ophssp_file(filepath, output_dir)
 
 ################ test #############################
 
 # ophssp_create_new_file(root_dir, output_dir)
 # process_ophssp_file(root_dir, output_dir)
-process_ophs_file(root_dir, output_dir)
+# process_ophssp_file(root_dir, output_dir)

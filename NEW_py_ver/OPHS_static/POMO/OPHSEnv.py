@@ -92,8 +92,12 @@ class OPHSEnv:
         loaded_dict = torch.load(filename, map_location=device)
         self.saved_depot_xy = loaded_dict['hotel_xy']
         self.saved_node_xy = loaded_dict['node_xy']
-        self.saved_node_prize = loaded_dict['node_prize']
         self.saved_remain_len = loaded_dict['remain_len']
+        if self.stochastic_prize:
+            self.saved_node_prize = torch.stack((loaded_dict['mean'], loaded_dict['deviation']), dim=-1)    
+        else:
+            self.saved_node_prize = loaded_dict['node_prize']
+        
         self.saved_index = 0   
 
         if hotel_swap:

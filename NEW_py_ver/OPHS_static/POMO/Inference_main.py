@@ -1,8 +1,9 @@
 ##########################################################################################
-import math, os, sys, time, torch, random, warnings
+import math, os, sys, time, torch, random, warnings, copy
 import pandas as pd
 import numpy as np
 from scipy.spatial.distance import pdist, squareform
+from scipy.stats import norm
 
 warnings.filterwarnings("ignore", message="You are using `torch.load` with `weights_only=False`")
 
@@ -25,12 +26,13 @@ CUDA_DEVICE_NUM = 0
 
 ##########################################################################################
 # parameters
-stochastic_prize = False
+stochastic_prize = True
+
 env_params = {
-    'problem_size': 98,
-    'pomo_size': 98,
-    'hotel_size': 17,
-    'day_number': 6,
+    'problem_size': 64,
+    'pomo_size': 64,
+    'hotel_size': 12,
+    'day_number': 5,
     'stochastic_prize': stochastic_prize
 }
 
@@ -50,8 +52,8 @@ tester_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
     'model_load': {
-        'path': './result/ophs_so_100',  # directory path of pre-trained model and log files saved.
-        'epoch': 210,  # epoch number of pre-trained model to laod.
+        'path': './result/ophssp_so_64',  # directory path of pre-trained model and log files saved.
+        'epoch': 220,  # epoch number of pre-trained model to laod.
     },
     'test_episodes': 10*1000,
     'test_batch_size': 1000,
@@ -59,7 +61,7 @@ tester_params = {
     # 'aug_factor': 16,
     'test_data_load': {
         'enable': True,
-        'filename': '../../../Instances/OPHS_pt/100-180-15-6.pt',
+        'filename': '../../../Instances/OPHSSP_pt/66-125-10-5.pt',
         'hotel_swap': True
         # 'order': None  # Add 'order' to hold the hotel order
     },
@@ -179,11 +181,12 @@ if __name__ == '__main__':
 
     #####################################################   FUNCTIONS   ###################################################################################
 
-    def parse_instance(instance_path):
+    def parse_instance(instance_path, stochastic_prize: bool = False):
         
         def is_valid_line(line):
             parts = line.strip().split()
-            if len(parts) != 3:
+            expected_length = 4 if stochastic_prize else 3  
+            if (len(parts) != expected_length):
                 return False
             try:
                 list(map(float, parts))  # Ensure all values are valid floats (handles negatives too)
@@ -198,14 +201,22 @@ if __name__ == '__main__':
             file.readline()  # Skip t_max line
             data = [list(map(float, line.split())) for line in file if is_valid_line(line)]
 
-        x_coords, y_coords, scores = zip(*data)
+        if not stochastic_prize:
+            x_coords, y_coords, scores = zip(*data) 
+            scores = torch.tensor(scores, dtype=torch.float64)  
+            scores_for_hps = copy.deepcopy(scores)
+        else: 
+            x_coords, y_coords, mean, variance = zip(*data)
+            scores = torch.stack((torch.tensor(mean), torch.tensor(variance)))
+            scores_for_hps = copy.deepcopy(mean)
+
         nodes_number = n + h  # Total nodes including hotels
         hotels_number = h + 2
         all_nodes_index = list(range(nodes_number))
         distance_matrix = squareform(pdist(np.column_stack((x_coords, y_coords))))
         hotel_nodes_index = all_nodes_index[:hotels_number]
         hps = np.zeros((hotels_number, hotels_number))  # hps = hotel_potential_score
-
+        
         pair_list = []
         for i in hotel_nodes_index:
             for j in hotel_nodes_index:
@@ -218,9 +229,9 @@ if __name__ == '__main__':
             for node_i in all_nodes_index:
                 total_pair_distance = distance_matrix[node_i][a] + distance_matrix[node_i][b]
                 if total_pair_distance <= t_max:
-                    hps[a,b] += scores[node_i]
+                    hps[a,b] += scores_for_hps[node_i]
                     if a != b: 
-                        hps[b,a] += scores[node_i]
+                        hps[b,a] += scores_for_hps[node_i]
 
         hps = torch.tensor(hps)  # Convert to tensor
 
@@ -269,7 +280,7 @@ if __name__ == '__main__':
             order += sequence[i + 1] * (h ** i)  # Use i + 1 to skip the start point (0)
         return order
 
-    def RL_inference(input_order, node_scores, n_days):
+    def RL_inference(input_order, node_scores, n_days, confidence_level: float = 0.95):
 
         self = OPTester(env_params=env_params, model_params=model_params, tester_params=tester_params)
 
@@ -280,15 +291,12 @@ if __name__ == '__main__':
                 hotel_swap=self.tester_params['test_data_load']['hotel_swap'], 
                 order=input_order  # Ensure order is passed here
             )
-        if self.tester_params['augmentation_enable']:
-            aug_factor = self.tester_params['aug_factor']
-        else:
-            aug_factor = 1
+
+        aug_factor = self.tester_params['aug_factor'] if self.tester_params['augmentation_enable'] else 1
 
         self.run(batch_size=1)
 
         pomo = torch.argmax(self.reward, dim=1)
-        node_scores = torch.tensor(node_scores, dtype=torch.float32)
 
         best_score = -float('inf')  # Track the best collected score
         best_order = None  # Track the best order sequence
@@ -302,19 +310,36 @@ if __name__ == '__main__':
                     cleaned_solution.append(value)
 
             complete_order = torch.tensor(cleaned_solution, dtype=torch.int64)
-            collected_score = node_scores[complete_order].sum().item()
+
+            if stochastic_prize:
+                mean_and_variance = node_scores[:, complete_order].sum(dim=1)  
+                mean = mean_and_variance[0].item()
+                std_dev = torch.sqrt(mean_and_variance[1]).item()
+                collected_score = mean + norm.ppf(confidence_level) * std_dev                
+            else:
+                collected_score = node_scores[complete_order].sum().item()
 
             if collected_score > best_score:
                 best_score = collected_score
                 best_order = complete_order
             
-            h = (node_scores == 0).nonzero().squeeze()[-1] + 1  # Number of hotels
+        num_hotels = (node_scores[0] == 0 if stochastic_prize else node_scores == 0).nonzero().squeeze()[-1] + 1  # Number of hotels
         if best_score != 0:
-            hotel_visits = (best_order < h).nonzero().squeeze()
-            score_per_day = torch.tensor([
-                node_scores[best_order[hotel_visits[i] + 1 : hotel_visits[i + 1]]].sum()
-                for i in range(len(hotel_visits) - 1)
-            ], dtype=torch.float32)
+            hotel_visits = (best_order < num_hotels).nonzero().squeeze()
+
+            if not stochastic_prize:
+                score_per_day = torch.tensor([
+                    node_scores[best_order[hotel_visits[i] + 1 : hotel_visits[i + 1]]].sum()
+                    for i in range(len(hotel_visits) - 1)
+                ], dtype=torch.float32)
+            else:
+                score_per_day = torch.stack([
+                    node_scores[:, best_order[hotel_visits[i] + 1 : hotel_visits[i + 1]]].sum(dim=1) 
+                    for i in range(len(hotel_visits) - 1)
+                ])
+                mean_per_day = score_per_day[:, 0]
+                std_dev_per_day = torch.sqrt(score_per_day[:, 1])
+                score_per_day = mean_per_day + norm.ppf(confidence_level) * std_dev_per_day
         else:
             score_per_day = torch.zeros(n_days, dtype=torch.float32)
             score_per_day[n_days-1] = -1
@@ -532,13 +557,15 @@ if __name__ == '__main__':
         #     summary.to_excel(writer, index=False, sheet_name="Summary Statistics")
 
         print(f"\nResults saved to {output_file}\n")
-        print(df, summary)
+        print(results)
+
+        return final_hps
 
     def optimize_trip(hps, hotel_size, n_days, scores, max_no_improve=20):
 
         hotel_order = greedy_trip_with_exploration(hps, n_days)  
         best_order = sequence_to_order(hotel_order, hotel_size)  
-        best_complete_solution, best_score, prize_per_day = RL_inference(best_order, score, n_days)
+        best_complete_solution, best_score, prize_per_day = RL_inference(best_order, scores, n_days)
 
         no_improve_count = 0
         updated_mask = torch.zeros_like(hps, dtype=torch.bool)  
@@ -571,25 +598,19 @@ if __name__ == '__main__':
 
     ####################################### testing #############################################################################################
 
-    instance_path = r"../../../Instances/raw_OPHS_instances/SET5 15-6/100-180-15-6.ophs"
-    # max_no_improve = 20
-    repeats = 2
+    #inputs
+    instance_path = r"../../../Instances/raw_OPHSSP_instances/66-125-10-5.ophs"
+    max_no_improve = 20
+    repeats = 20
     augmentation_factors = [1, 8, 16]
-    output_file = "output_results/100-180-15-6.xlsx"
+    output_file = "output_results/66-125-10-5_stochastic.xlsx"
     
-    hps, score, hotels_number, day_number = parse_instance(instance_path)
-    run_repeats_and_save(hps, hotels_number, day_number, repeats, score, output_file)
 
-
-
-
-######################################################## backup #########################################
-
-    # same_indices = (hps_old == hps).sum().item()  # Count matching elements
+    hps, scores, hotels_number, day_number = parse_instance(instance_path, stochastic_prize)
+    final_hps = run_repeats_and_save(hps, hotels_number, day_number, repeats, scores, output_file)
+    
+    # same_indices = (final_hps == hps).sum().item()  # Count matching elements
     # total_indices = hps.numel()                   # Total number of elements
     # metric = same_indices / total_indices
+    # print(hps, final_hps, metric)
 
-    # plot_trip(solution, hotels_number, hotel_sequence, coordinates, scores)
-    # trip = greedy_trip_with_exploration(hps,day_number)
-    # order = sequence_to_order(trip, hotels_number)
-#################################################################################################
