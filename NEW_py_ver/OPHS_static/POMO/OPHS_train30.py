@@ -41,7 +41,6 @@ env_params = {
     'pomo_size': 32,
     'day_number': 3,
     'hotel_size': 7,
-    'test_stage': False,
     'stochastic_prize': stochastic_prize
 }
 

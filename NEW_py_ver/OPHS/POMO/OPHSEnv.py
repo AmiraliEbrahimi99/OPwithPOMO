@@ -39,6 +39,7 @@ class OPHSEnv:
         self.pomo_size = env_params['pomo_size']
         self.hotel_size = env_params['hotel_size']                      # new input
         self.day_number = env_params['day_number']                      # new input
+        self.stochastic_prize = env_params['stochastic_prize']
         
         self.FLAG__use_saved_problems = False
         self.saved_depot_xy = None
@@ -85,44 +86,25 @@ class OPHSEnv:
         self.reset_state = Reset_state()
         self.step_state = Step_state()
 
-    def use_saved_problems(self, filename, device, hotel_swap: bool = False, order: int=0):             
+    def use_saved_problems(self, filename, device):             
         self.FLAG__use_saved_problems = True
 
         loaded_dict = torch.load(filename, map_location=device)
         self.saved_depot_xy = loaded_dict['hotel_xy']
         self.saved_node_xy = loaded_dict['node_xy']
-        self.saved_node_prize = loaded_dict['node_prize']
         self.saved_remain_len = loaded_dict['remain_len']
+        if self.stochastic_prize:
+            self.saved_node_prize = torch.stack((loaded_dict['mean'], loaded_dict['deviation']), dim=-1)    
+        else:
+            self.saved_node_prize = loaded_dict['node_prize']
+        
         self.saved_index = 0   
-
-        if hotel_swap:
-            coords = self.saved_depot_xy.squeeze(0)
-
-            total_states = self.hotel_size**(self.day_number)
-            if order >= total_states:
-                raise ValueError(f"Order {order} exceeds the total number of states {total_states}.")
-
-            # Compute the state corresponding to the given order
-            state = [0]  # Start with the fixed start point
-            current_order = order
-            for _ in range(self.day_number-1):
-                point = current_order % self.hotel_size
-                state.append(point)
-                current_order //= self.hotel_size
-            state.append(1)  # Add the fixed end point
-
-            # Ensure the sequence length matches hotel_size by appending 1s
-            while len(state) < self.hotel_size:
-                state.append(1)
-
-            # Extract coordinates for the computed state
-            self.saved_depot_xy = coords[state, :].unsqueeze(0)
 
     def load_problems(self, batch_size, aug_factor=1) : 
         self.batch_size = batch_size
         
         if not self.FLAG__use_saved_problems:
-            depot_xy, node_xy, node_prize, trip_length = get_random_problems(batch_size, self.problem_size, self.hotel_size, self.day_number)   # new trip length value
+            depot_xy, node_xy, node_prize, trip_length = get_random_problems(batch_size, self.problem_size, self.hotel_size, self.day_number, self.stochastic_prize)   # new trip length value
         else:
             depot_xy = self.saved_depot_xy[self.saved_index:self.saved_index+batch_size]
             node_xy = self.saved_node_xy[self.saved_index:self.saved_index+batch_size]
@@ -139,25 +121,32 @@ class OPHSEnv:
                 self.batch_size = self.batch_size * 8
                 self.depot_xy = augment_xy_data_by_8_fold(depot_xy)
                 self.node_xy = augment_xy_data_by_8_fold(node_xy)
-                node_prize = node_prize.repeat(8, 1, 1)
-                self.trip_length = self.trip_length.repeat(8, 1)
+                self.trip_length = self.trip_length.repeat(8, 1)           
+                if self.stochastic_prize:
+                    node_prize = node_prize.repeat(8, 1, 1)
+                else:
+                    node_prize = node_prize.repeat(8, 1)
             elif aug_factor == 16:
                 self.batch_size = self.batch_size * 16
                 self.depot_xy = augment_xy_data_by_16_fold(depot_xy)
                 self.node_xy = augment_xy_data_by_16_fold(node_xy)
-                node_prize = node_prize.repeat(16, 1, 1)
                 self.trip_length = self.trip_length.repeat(16, 1)
+                if self.stochastic_prize:
+                    node_prize = node_prize.repeat(16, 1, 1)
+                else:
+                    node_prize = node_prize.repeat(16, 1)
             else:
                 raise NotImplementedError
                 
         self.depot_node_xy = torch.cat((self.depot_xy, self.node_xy), dim=1)
         # shape: (batch, problem+hotel, 2)
-        depot_prize = torch.zeros(size=(self.batch_size, self.hotel_size, 2))                            
-        # depot_prize = torch.zeros(size=(self.batch_size, self.hotel_size))                            
-        # shape: (batch, hotel, 2)
+        if self.stochastic_prize:
+            depot_prize = torch.zeros(size=(self.batch_size, self.hotel_size, 2))                            
+        else:
+            depot_prize = torch.zeros(size=(self.batch_size, self.hotel_size))                            
+        # shape: (batch, hotel, 2) or # shape: (batch, hotel)
         self.depot_node_prize = torch.cat((depot_prize, node_prize), dim=1)
         # shape: (batch, problem+hotel, 2)
-
         
         self.BATCH_IDX = torch.arange(self.batch_size)[:, None].expand(self.batch_size, self.pomo_size)
         self.POMO_IDX = torch.arange(self.pomo_size)[None, :].expand(self.batch_size, self.pomo_size)
@@ -256,32 +245,32 @@ class OPHSEnv:
 
         # Dynamic-2
         ####################################
+
         self.at_the_depot = (selected < self.hotel_size)                                                       
-   
-        self.prize_list = self.depot_node_prize[:, None, :, :].expand(self.batch_size, self.pomo_size, -1, -1)
-        # shape: (batch, pomo, problem+hotel , 2)
-        self.gathering_index = selected[:, :, None, None].expand(-1, -1, 1, 2)
-        # shape: (batch, pomo, 1, 1)
-        self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
-        # shape: (batch, pomo, 2)
-        raw_rewards = torch.randn(self.batch_size, self.problem_size) * self.selected_prize[:,:,1] + self.selected_prize[:,:,0]
 
-        non_zero_mask = raw_rewards != 0                                    # Clamp only the non-zero values
-        node_prizes = raw_rewards.clone()
-        node_prizes[non_zero_mask] = torch.clamp(torch.round(raw_rewards[non_zero_mask]), min=0.02, max=0.99)
-        # self.reward_tensor = node_prizes / 100
-        self.reward_tensor = node_prizes
+        if self.stochastic_prize:
+            self.prize_list = self.depot_node_prize[:, None, :, :].expand(self.batch_size, self.pomo_size, -1, -1)
+            # shape: (batch, pomo, problem+hotel , 2)
+            self.gathering_index = selected[:, :, None, None].expand(-1, -1, 1, 2)
+            # shape: (batch, pomo, 1, 1)
+            self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
+            # shape: (batch, pomo, 2)
+            raw_rewards = torch.randn(self.batch_size, self.problem_size) * self.selected_prize[:,:,1] + self.selected_prize[:,:,0]
 
-        self.collected_prize += self.reward_tensor
-    
-        # self.prize_list = self.depot_node_prize[:, None, :].expand(self.batch_size, self.pomo_size, -1)
-        # # shape: (batch, pomo, problem+1)
-        # self.gathering_index = selected[:, :, None]
-        # # shape: (batch, pomo, 1)
-        # self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
-        # # shape: (batch, pomo)
+            non_zero_mask = raw_rewards != 0                                    # Clamp only the non-zero values
+            node_prizes = raw_rewards.clone()
+            node_prizes[non_zero_mask] = torch.clamp(torch.round(raw_rewards[non_zero_mask]), min=0.02, max=0.99)
+            self.reward_tensor = node_prizes
+            self.collected_prize += self.reward_tensor
+        else:
+            self.prize_list = self.depot_node_prize[:, None, :].expand(self.batch_size, self.pomo_size, -1)
+            # shape: (batch, pomo, problem+hotel)
+            self.gathering_index = selected[:, :, None]
+            # shape: (batch, pomo, 1)
+            self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
+            # shape: (batch, pomo)
+            self.collected_prize += self.selected_prize
 
-        # self.collected_prize += self.selected_prize
 
         selected_len = self.calculate_two_distance()
 

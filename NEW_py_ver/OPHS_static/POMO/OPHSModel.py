@@ -156,7 +156,7 @@ class EncoderLayer(nn.Module):
         # Wqkv shape: (batch, problem+2, head_num*qkv_dim)
         # qkv shape: (batch, head_num, problem+2, qkv_dim)
 
-        out_concat = multi_head_attention(q, k, v)
+        out_concat = flash_multi_head_attention(q, k, v)
         # out_concat = multi_head_attention(q, k, v)
         # shape: (batch, problem+2, head_num*qkv_dim)
 
@@ -239,7 +239,7 @@ class OPHS_Decoder(nn.Module):
         q = q_last
         # shape: (batch, head_num, pomo, qkv_dim)
 
-        out_concat = multi_head_attention(q, self.k, self.v, rank3_ninf_mask=ninf_mask)
+        out_concat = flash_multi_head_attention(q, self.k, self.v, rank3_ninf_mask=ninf_mask)
         # out_concat = multi_head_attention(q, self.k, self.v, rank3_ninf_mask=ninf_mask)
         # shape: (batch, pomo, head_num*qkv_dim)
 

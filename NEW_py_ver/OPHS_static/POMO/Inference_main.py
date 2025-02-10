@@ -6,6 +6,7 @@ from scipy.spatial.distance import pdist, squareform
 from scipy.stats import norm
 
 warnings.filterwarnings("ignore", message="You are using `torch.load` with `weights_only=False`")
+warnings.filterwarnings("ignore", category=FutureWarning, message=".*torch.backends.cuda.sdp_kernel.*")
 
 # Path Config
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -26,7 +27,7 @@ CUDA_DEVICE_NUM = 0
 
 ##########################################################################################
 # parameters
-stochastic_prize = True
+stochastic_prize = False
 
 env_params = {
     'problem_size': 64,
@@ -52,8 +53,8 @@ tester_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
     'model_load': {
-        'path': './result/ophssp_so_64',  # directory path of pre-trained model and log files saved.
-        'epoch': 220,  # epoch number of pre-trained model to laod.
+        'path': './result/ophs_so_64',  # directory path of pre-trained model and log files saved.
+        'epoch': 200,  # epoch number of pre-trained model to laod.
     },
     'test_episodes': 10*1000,
     'test_batch_size': 1000,
@@ -61,7 +62,7 @@ tester_params = {
     # 'aug_factor': 16,
     'test_data_load': {
         'enable': True,
-        'filename': '../../../Instances/OPHSSP_pt/66-125-10-5.pt',
+        'filename': '../../../Instances/OPHS_pt/66-125-10-5.pt',
         'hotel_swap': True
         # 'order': None  # Add 'order' to hold the hotel order
     },
@@ -181,7 +182,7 @@ if __name__ == '__main__':
 
     #####################################################   FUNCTIONS   ###################################################################################
 
-    def parse_instance(instance_path, stochastic_prize: bool = False):
+    def parse_instance(instance_path, stochastic_prize: bool = False, confidence_level: float = 0.95):
         
         def is_valid_line(line):
             parts = line.strip().split()
@@ -208,7 +209,8 @@ if __name__ == '__main__':
         else: 
             x_coords, y_coords, mean, variance = zip(*data)
             scores = torch.stack((torch.tensor(mean), torch.tensor(variance)))
-            scores_for_hps = copy.deepcopy(mean)
+            # scores_for_hps = scores[0] + norm.ppf(confidence_level) * torch.sqrt((scores[1]))             # method confidence level
+            scores_for_hps = copy.deepcopy(mean)                                                            # method mean 
 
         nodes_number = n + h  # Total nodes including hotels
         hotels_number = h + 2
@@ -236,31 +238,6 @@ if __name__ == '__main__':
         hps = torch.tensor(hps)  # Convert to tensor
 
         return hps, scores, hotels_number, day_number 
-    
-    def create_hps_matrix(t_max, hotels_number, all_nodes_index, distance_matrix, scores):
-            
-        hotel_nodes_index = all_nodes_index[:hotels_number]
-        hps = np.zeros((hotels_number, hotels_number))  # hps = hotel_potential_score
-
-        pair_list = []
-        for i in hotel_nodes_index:
-            for j in hotel_nodes_index:
-                if j >= i:
-                    pair_list.append([i,j])
-
-        for i in pair_list:
-            a = i[0]
-            b = i[1]
-            for node_i in all_nodes_index:
-                total_pair_distance = distance_matrix[node_i][a] + distance_matrix[node_i][b]
-                if total_pair_distance <= t_max:
-                    hps[a,b] += scores[node_i]
-                    if a != b: 
-                        hps[b,a] += scores[node_i]
-
-        hps = torch.tensor(hps)  # Convert to tensor
-
-        return hps
     
     def order_to_sequence(order, h, n_day):
         sequence = [0]  # Start with the fixed start point
@@ -552,12 +529,12 @@ if __name__ == '__main__':
         summary["Final_Sequence"] = None
         summary.loc[0, "Final_Sequence"] = str(final_sequence)  # Assign only to the first row
 
-        # with pd.ExcelWriter(output_file) as writer:
-        #     df.to_excel(writer, index=False, sheet_name="Raw Results")
-        #     summary.to_excel(writer, index=False, sheet_name="Summary Statistics")
+        with pd.ExcelWriter(output_file) as writer:
+            df.to_excel(writer, index=False, sheet_name="Raw Results")
+            summary.to_excel(writer, index=False, sheet_name="Summary Statistics")
 
         print(f"\nResults saved to {output_file}\n")
-        print(results)
+        # print(results)
 
         return final_hps
 
@@ -599,11 +576,11 @@ if __name__ == '__main__':
     ####################################### testing #############################################################################################
 
     #inputs
-    instance_path = r"../../../Instances/raw_OPHSSP_instances/66-125-10-5.ophs"
+    instance_path = r"../../../Instances/raw_OPHS_instances/66-125-10-5.ophs"
     max_no_improve = 20
     repeats = 20
     augmentation_factors = [1, 8, 16]
-    output_file = "output_results/66-125-10-5_stochastic.xlsx"
+    output_file = "output_results/66-125-10-5_with_flash.xlsx"
     
 
     hps, scores, hotels_number, day_number = parse_instance(instance_path, stochastic_prize)
