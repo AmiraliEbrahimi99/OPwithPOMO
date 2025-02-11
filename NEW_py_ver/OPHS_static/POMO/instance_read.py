@@ -202,7 +202,8 @@ def ophssp_create_new_file(filepath, output_dir):
     prize_max = node_prize_tensor.max()
     prize_rescaled = ((node_prize_tensor - prize_min) / (prize_max - prize_min) * (95.5 - 4.5) + 4.5)
 
-    coefficient_of_variation = (torch.rand(problem_size)) * (0.5 - 0.1) + 0.1
+    coefficient_of_variation = (torch.rand(problem_size)) * (0.5 - 0.1) + 0.1                                       #set low variance
+    # coefficient_of_variation = (torch.rand(problem_size)) * (1 - 0.5) + 0.5                                       #set high variance
     deviation = prize_rescaled * coefficient_of_variation 
     rescaled_deviation = ((deviation - 4.5) * (prize_max - prize_min) / (95.5 - 4.5)) + prize_min
     rescaled_variance = (rescaled_deviation) ** 2
@@ -230,13 +231,13 @@ def ophssp_create_new_file(filepath, output_dir):
 
 ###########################################################################################################################
 
-root_dir = "Instances/raw_OPHS_instances"
-output_dir = "Instances/OPHS_pt"
+root_dir = "Instances/raw_OPHSSP_instances_high_variance"
+output_dir = "Instances/OPHSSP_high_variance_pt"
 # output_dir = "Instances/OPHSSP"
 os.makedirs(output_dir, exist_ok=True)
 
 for filepath in glob.glob(os.path.join(root_dir, "**/*.ophs"), recursive=True):
-    process_ophs_file(filepath, output_dir)
+    process_ophssp_file(filepath, output_dir)
 
 ################ test #############################
 
