@@ -8,7 +8,7 @@ warnings.filterwarnings("ignore", category=FutureWarning, message=".*torch.backe
 
 # Machine Environment Config
 
-DEBUG_MODE = True
+DEBUG_MODE = False
 USE_CUDA = not DEBUG_MODE
 CUDA_DEVICE_NUM = 0
 
@@ -35,11 +35,11 @@ from OPHSTrainer import OPHSTrainer as Trainer
 
 ##########################################################################################
 # parameters
-stochastic_prize = False
+stochastic_prize = True
 env_params = {
     'problem_size': 32,
     'pomo_size': 32,
-    'day_number': 3,
+    'day_number': 4,
     'hotel_size': 7,
     'stochastic_prize': stochastic_prize
 }
@@ -58,11 +58,11 @@ model_params = {
 
 optimizer_params = {
     'optimizer': {
-        'lr': 2e-4,
+        'lr': 8e-4,
         'weight_decay': 1e-6
     },
     'scheduler': {
-        'milestones': [190,],
+        'milestones': [390,],
         'gamma': 0.1
     }
 }
@@ -70,9 +70,9 @@ optimizer_params = {
 trainer_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
-    'epochs': 200,
+    'epochs': 400,
     'train_episodes': 10*1000,
-    'train_batch_size': 128,
+    'train_batch_size': 512,
     
     'augmentation_enable': False,
     'aug_factor': 8,
@@ -100,7 +100,7 @@ trainer_params = {
 
 logger_params = {
     'log_file': {
-        'desc': 'ophssp_so_100_XL_3',
+        'desc': 'ophssp_so_32',
         'filename': 'run_log'
     }
 }
