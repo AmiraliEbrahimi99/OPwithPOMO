@@ -35,12 +35,12 @@ from OPHSTrainer import OPHSTrainer as Trainer
 
 ##########################################################################################
 # parameters
-stochastic_prize = False
+stochastic_prize = False    
 env_params = {
-    'problem_size': 62,
-    'pomo_size': 62,
-    'day_number': 5,                    
-    'hotel_size': 12,
+    'problem_size': 98,
+    'pomo_size': 98,
+    'day_number': 6,                    
+    'hotel_size': 17,
     'stochastic_prize': stochastic_prize
 }
 
@@ -100,7 +100,7 @@ trainer_params = {
 
 logger_params = {
     'log_file': {
-        'desc': 'ophs_do_32',
+        'desc': 'ophs_do_100',
         'filename': 'run_log'
     }
 }

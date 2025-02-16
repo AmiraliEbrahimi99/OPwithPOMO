@@ -374,7 +374,7 @@ class OPHSEnv:
 
             reward = self.collected_prize
             # print(f'########selected nodes######## \n{self.selected_node_list}\n\n########trip length#######\n{self.trip_length}\n\n######final reward#####\n{reward}')    #for testing
-            print(self.selected_node_list)
+            # print(self.selected_node_list)
         else:
             reward = None
 
