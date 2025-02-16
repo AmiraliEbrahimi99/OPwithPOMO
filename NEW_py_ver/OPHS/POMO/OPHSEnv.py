@@ -164,6 +164,8 @@ class OPHSEnv:
     def reset(self) : 
         self.selected_count = 0
         self.current_node = None
+        self.condition_met_flag = None
+
         # shape: (batch, pomo)
         self.selected_node_list = torch.zeros((self.batch_size, self.pomo_size, 0), dtype=torch.long)
         # shape: (batch, pomo, 0~)
@@ -334,7 +336,7 @@ class OPHSEnv:
         # shape: (batch, pomo)
         self.ninf_mask[:, :, :self.hotel_size][self.last_step_mask] = float('-inf')
 
-        if not hasattr(self, "condition_met_flag"):
+        if self.condition_met_flag is None:
             self.condition_met_flag = torch.zeros_like(self.at_the_depot, dtype=torch.bool)
 
         first_time_condition = (self.at_the_depot & ~self.ninf_mask_first_step & self.last_step_mask) & ~self.condition_met_flag
@@ -372,7 +374,7 @@ class OPHSEnv:
 
             reward = self.collected_prize
             # print(f'########selected nodes######## \n{self.selected_node_list}\n\n########trip length#######\n{self.trip_length}\n\n######final reward#####\n{reward}')    #for testing
-            # print(self.selected_node_list)
+            print(self.selected_node_list)
         else:
             reward = None
 
