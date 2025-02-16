@@ -37,10 +37,10 @@ from OPHSTrainer import OPHSTrainer as Trainer
 # parameters
 stochastic_prize = False
 env_params = {
-    'problem_size': 32,
-    'pomo_size': 32,
-    'day_number': 4,                    
-    'hotel_size': 7,
+    'problem_size': 98,
+    'pomo_size': 98,
+    'day_number': 6,                    
+    'hotel_size': 17,
     'stochastic_prize': stochastic_prize
 }
 
@@ -58,7 +58,7 @@ model_params = {
 
 optimizer_params = {
     'optimizer': {
-        'lr': 1e-4,
+        'lr': 2e-4,
         'weight_decay': 1e-6
     },
     'scheduler': {
@@ -72,9 +72,9 @@ trainer_params = {
     'cuda_device_num': CUDA_DEVICE_NUM,
     'epochs': 200,
     'train_episodes': 10*1000,
-    'train_batch_size': 64,
+    'train_batch_size': 128,
 
-    'augmentation_enable': True,
+    'augmentation_enable': False,
     'aug_factor': 16,
     'prev_model_path': None,
 
@@ -100,7 +100,7 @@ trainer_params = {
 
 logger_params = {
     'log_file': {
-        'desc': 'ophssp_do_32_16xAug',
+        'desc': 'ophs_do_32',
         'filename': 'run_log'
     }
 }

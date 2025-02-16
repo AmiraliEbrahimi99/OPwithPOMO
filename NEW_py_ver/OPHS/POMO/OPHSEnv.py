@@ -224,13 +224,15 @@ class OPHSEnv:
         self.selected_node_list = torch.cat((self.selected_node_list, self.current_node[:, :, None]), dim=2)
         # shape: (batch, pomo, 0~)
 
-        self.len_to_starting_depot, self.len_to_finishing_depot = self.calculate_len_to_depot()
-        # shape len_to_start: (batch, pomo)
-        # shape len_to_finish: (batch, hotel, pomo)
-
         self.remaining_len[self.selected_count == 1] = self.trip_length[:, None, 0]             # Assign length for the first hotel (first step)       
         
         if self.selected_count == 1 :                     #first step(pomo) mask
+
+            self.len_to_starting_depot, self.len_to_finishing_depot, self.len_to_finishing_depot_all_nodes = self.calculate_len_to_depot()
+            # shape len_to_start: (batch, pomo)
+            # shape len_to_finish: (batch, hotel, pomo)
+            # shape len_to_finish_all: (batch, hotel, pomo+hotel)
+
             self.remaining_first_step = self.remaining_len.unsqueeze(1).expand(-1, self.hotel_size, -1)
             # shape: (batch, hotel, pomo)
             len_to_starting_depot_expanded = self.len_to_starting_depot.unsqueeze(1).expand(-1, self.hotel_size, -1)
@@ -273,6 +275,7 @@ class OPHSEnv:
 
 
         selected_len = self.calculate_two_distance()
+        self.negative_count = (self.remaining_len < 0).sum().item()  
 
         self.remaining_len -= selected_len
 
@@ -320,15 +323,25 @@ class OPHSEnv:
         self.ninf_mask[self.len_too_large_expanded] = float('-inf')
         # shape: (batch, pomo, problem+hotel)
 
+        gathering_index_depot_selection = selected[:, None, :].expand(-1, self.hotel_size, -1)
+        each_pomo_len_to_hotels = self.len_to_finishing_depot_all_nodes.gather(dim=2, index=gathering_index_depot_selection)
 
-        self.depots_ninf_mask = self.remaining_len_expanded < self.len_to_finishing_depot               # hotels masking
+        self.depots_ninf_mask = self.remaining_len_expanded < each_pomo_len_to_hotels                # hotels masking
         # shape: (batch, hotel, pomo)
         self.ninf_mask[:, :, :self.hotel_size][self.depots_ninf_mask.transpose(1, 2)] = float('-inf')
         # shape: (batch, pomo, problem+hotel)
         self.last_step_mask[(self.day_finished >= self.day_number-1)] = True                             # last trip masking
         # shape: (batch, pomo)
         self.ninf_mask[:, :, :self.hotel_size][self.last_step_mask] = float('-inf')
-        self.ninf_mask[:, :, 1][~self.at_the_depot & ~self.ninf_mask_first_step] = 0        # only hotel 1 is considered unvisited, unless you are AT the depot  
+
+        if not hasattr(self, "condition_met_flag"):
+            self.condition_met_flag = torch.zeros_like(self.at_the_depot, dtype=torch.bool)
+
+        first_time_condition = (self.at_the_depot & ~self.ninf_mask_first_step & self.last_step_mask) & ~self.condition_met_flag
+        self.ninf_mask[:, :, 1][first_time_condition] = 0
+        self.condition_met_flag |= first_time_condition
+
+        self.ninf_mask[:, :, 1][(~self.at_the_depot & ~self.ninf_mask_first_step) & self.last_step_mask] = 0        # only hotel 1 in last day is considered unvisited, unless you are AT the depot  
         # shape: (batch, pomo, hotel)
         self.last_step_node_mask = self.visited_ninf_flag[:, :, self.hotel_size:].clone()
         self.last_step_node_mask[self.len_too_large[:, 1, :, :]] = float('-inf')                # hotel 1 as finishing depot
@@ -372,6 +385,8 @@ class OPHSEnv:
         #shape: (batch, problem, 2)
         self.finishing_depot_xy_expanded = self.depot_xy.unsqueeze(2).expand(-1, -1, self.problem_size, -1)
         #shape: (batch, hotel, problem, 2)
+        self.finishing_all_node_xy_expanded = self.depot_xy.unsqueeze(2).expand(-1, -1, self.problem_size+self.hotel_size, -1)
+        #shape: (batch, hotel, problem+hotel, 2)
         
         # Calculate squared differences and sum along the last dimension
         squared_diff = (self.starting_depot_xy_expanded - self.node_xy) ** 2
@@ -381,19 +396,28 @@ class OPHSEnv:
         #shape: (batch, hotel, problem, 2)
         squared_diff2 = (self.finishing_depot_xy_expanded - self.node_xy_expanded) ** 2
         #shape: (batch, hotel, problem, 2)
+      
+        self.all_node_xy_expanded = self.depot_node_xy.unsqueeze(1).expand(-1, self.hotel_size, -1, -1)
+        #shape: (batch, hotel, problem+hotel, 2)
+        squared_diff3 = (self.finishing_all_node_xy_expanded - self.all_node_xy_expanded) ** 2
+        #shape: (batch, hotel, problem+hotel, 2)
        
         self.distance_sums = torch.sum(squared_diff, dim=2)
         #shape: (batch, problem)
         self.distance_sums2 = torch.sum(squared_diff2, dim=3)
         #shape: (batch, hotel, problem)
+        self.distance_sums3 = torch.sum(squared_diff3, dim=3)
+        #shape: (batch, hotel, problem+hotel)
 
         # Square root to get the Euclidean distances
         len_to_starting_depot = torch.sqrt(self.distance_sums)
         #shape: (batch, problem)
         len_to_finishing_depot = torch.sqrt(self.distance_sums2)
         #shape: (batch, hotel, problem)
+        len_to_finishing_depot_all_nodes = torch.sqrt(self.distance_sums3)
+        #shape: (batch, hotel, problem+hotel)
 
-        return len_to_starting_depot, len_to_finishing_depot 
+        return len_to_starting_depot, len_to_finishing_depot, len_to_finishing_depot_all_nodes 
 
     def calculate_future_len(self) : 
         self.node_xy_expanded = self.node_xy.unsqueeze(dim=1).expand(-1, self.problem_size, -1, -1)

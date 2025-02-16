@@ -6,13 +6,13 @@ def get_random_problems(batch_size, problem_size, hotel_size, day_number, stocha
  
     depot_xy = torch.rand(size=(batch_size, hotel_size ,2))
 
-    if problem_size == 32:
+    if problem_size == 30:
         t_max = 5 
-    elif problem_size == 64:
+    elif problem_size == 62:
         t_max = 6 
-    elif problem_size == 100 and day_number < 8:
+    elif problem_size == 98 and day_number < 8:
         t_max = 7
-    elif problem_size == 100 and day_number >= 8:
+    elif problem_size == 98 and day_number >= 8:
         t_max = 10
     else:
         raise NotImplementedError
