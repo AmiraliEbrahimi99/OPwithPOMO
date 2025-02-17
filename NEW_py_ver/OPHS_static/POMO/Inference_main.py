@@ -1,8 +1,9 @@
 ##########################################################################################
-import math, os, sys, time, torch, random, warnings, copy, glob
+import math, os, sys, time, torch, random, warnings, copy, glob, ast
 import pandas as pd
 import numpy as np
 from scipy.spatial.distance import pdist, squareform
+from natsort import natsorted, natsort_keygen
 from scipy.stats import norm
 
 warnings.filterwarnings("ignore", message="You are using `torch.load` with `weights_only=False`")
@@ -27,7 +28,7 @@ CUDA_DEVICE_NUM = 0
 
 ##########################################################################################
 # parameters
-stochastic_prize = False
+stochastic_prize = True
 
 model_params = {
     'stochastic_prize': stochastic_prize,
@@ -45,8 +46,8 @@ tester_params = {
     'use_cuda': USE_CUDA,
     'cuda_device_num': CUDA_DEVICE_NUM,
     'model_load': {
-        'path': './result/ophs_so_32',  # directory path of pre-trained model and log files saved.
-        'epoch': 200,  # epoch number of pre-trained model to laod.
+        'path': './result/ophssp_so_100',  # directory path of pre-trained model and log files saved.
+        'epoch': 220,  # epoch number of pre-trained model to laod.
     },
     'test_episodes': 10*1000,
     'test_batch_size': 1000,
@@ -228,7 +229,7 @@ def parse_instance(instance_path, stochastic_prize: bool = False, confidence_lev
 
     hps = torch.tensor(hps)  # Convert to tensor
 
-    return hps, scores, hotels_number, day_number 
+    return hps, scores, hotels_number, day_number, x_coords, y_coords 
 
 def order_to_sequence(order, h, n_day):
     sequence = [0]  # Start with the fixed start point
@@ -283,7 +284,9 @@ def RL_inference(input_order, node_scores, n_days, confidence_level: float = 0.9
             mean_and_variance = node_scores[:, complete_order].sum(dim=1)  
             mean = mean_and_variance[0].item()
             std_dev = torch.sqrt(mean_and_variance[1]).item()
-            collected_score = mean + norm.pdf(confidence_level) * std_dev                
+            alpha = 1 - confidence_level
+            collected_score = norm.ppf(alpha, loc=mean, scale=std_dev)  
+            # collected_score = mean + norm.pdf(confidence_level) * std_dev                
         else:
             collected_score = node_scores[complete_order].sum().item()
 
@@ -307,7 +310,9 @@ def RL_inference(input_order, node_scores, n_days, confidence_level: float = 0.9
             ])
             mean_per_day = score_per_day[:, 0]
             std_dev_per_day = torch.sqrt(score_per_day[:, 1])
-            score_per_day = mean_per_day + norm.pdf(confidence_level) * std_dev_per_day
+            alpha = 1 - confidence_level
+            score_per_day = norm.ppf(alpha, loc=mean_per_day, scale=std_dev_per_day)  
+            # score_per_day = mean_per_day + norm.pdf(confidence_level) * std_dev_per_day
     else:
         score_per_day = torch.zeros(n_days, dtype=torch.float32)
         score_per_day[n_days-1] = -1
@@ -461,7 +466,7 @@ def run_repeats(instance_name, hps, hotel_size, n_days, repeats, scores):
             "Runtime": runtime,
             "Improvement_each_iter": each_iter,
             "iteration_to_converge":iter_to_converge,
-            "Best_solution": final_sequence,
+            "Best_solution": final_sequence if best_solution is not None else [0],
         })
 
     return pd.DataFrame(results)
@@ -504,17 +509,18 @@ def optimize_trip(hps, hotel_size, n_days, scores, max_no_improve=20):
 #####################################################   Main loop   ###################################################################################
 
 #inputs
-base_pt_path = "../../../Instances/OPHS_pt/*.pt"
-base_ophs_path = "../../../Instances/raw_OPHS_instances/*.ophs"
+base_pt_path = "../../../Instances/OPHSSP_pt/*.pt"
+base_ophs_path = "../../../Instances/raw_OPHSSP_instances/*.ophs"
 output_dir = "output_results"
 os.makedirs(output_dir, exist_ok=True)
-output_file = os.path.join(output_dir, "OPHS_RL_trained_on_32_Aug16x_3_repeat.xlsx")
+output_file = os.path.join(output_dir, "OPHSSP_HRL_trained_on_100_Aug8x_3_repeat.xlsx")
     
+augmentation_factor = 8
 repeats = 3
-augmentation_factor = 1
 
-pt_instances = glob.glob(base_pt_path)
-ophs_instances = glob.glob(base_ophs_path)
+pt_instances = natsorted(glob.glob(base_pt_path))
+ophs_instances = natsorted(glob.glob(base_ophs_path))
+
 pt_instances = [os.path.normpath(p) for p in pt_instances]
 ophs_instances = [os.path.normpath(p) for p in ophs_instances]
 
@@ -538,14 +544,14 @@ for index, pt_path in enumerate(pt_instances):
     tester_params['test_data_load']['filename'] = pt_path
 
     # Get corresponding .ophs file
-    ophs_path = os.path.normpath(pt_path.replace("OPHS_pt", "raw_OPHS_instances").replace(".pt", ".ophs"))      # replace names here too
+    ophs_path = os.path.normpath(pt_path.replace("OPHSSP_pt", "raw_OPHSSP_instances").replace(".pt", ".ophs"))      # replace names here too
     if ophs_path not in ophs_instances:
         print(f"Warning: No corresponding .ophs file found for {instance_name}")
         continue
 
     # Parse instance and run testing
     print(f"\nRunning for instance {index+1}/ {len(pt_instances)}, {instance_name}\n")
-    hps, scores, hotels_number, day_number = parse_instance(ophs_path, stochastic_prize)
+    hps, scores, hotels_number, day_number, x_coords, y_coords = parse_instance(ophs_path, stochastic_prize)
     df_results = run_repeats(instance_name, hps, hotels_number, day_number, repeats, scores)
     all_results.append(df_results)
  
@@ -564,16 +570,45 @@ summary = final_results.groupby("Instance").agg(
 best_solution_df = final_results.loc[final_results.groupby("Instance")["Final_Score"].idxmax(), ["Instance", "Best_solution"]]
 summary = summary.merge(best_solution_df, on="Instance", how="left")
 
+summary = summary.sort_values("Instance", key=natsort_keygen()) # Sort summary by instance name using natural sorting
+
 with pd.ExcelWriter(output_file) as writer:
     final_results.to_excel(writer, index=False, sheet_name="Raw Results")
     summary.to_excel(writer, index=False, sheet_name="Summary Statistics")
 
 print(f"\nResults saved to {output_file}\n")
 
+########################################## validity check ##########################################
+
+# x_coords = np.array(x_coords)
+# y_coords = np.array(y_coords)
+# num_nodes = len(x_coords)
+# distance_matrix = np.zeros((num_nodes, num_nodes))
+# for i in range(num_nodes):
+#     for j in range(num_nodes):
+#         distance_matrix[i, j] = np.sqrt((x_coords[i] - x_coords[j])**2 + (y_coords[i] - y_coords[j])**2)
 
 
-# same_indices = (final_hps == hps).sum().item()  # Count matching elements
-# total_indices = hps.numel()                   # Total number of elements
-# metric = same_indices / total_indices
-# print(hps, final_hps, metric)
+# for index, row in best_solution_df.iterrows():  # Iterate over each row
+#     solution = row["Best_solution"]  # Extract the list of node indices
+    
+#     if isinstance(solution, str):  # Convert from string to list if needed
+#         solution = ast.literal_eval(solution)
+
+#     total_distance = 0
+#     print(f"\nStep-by-step distances for solution of instance {row['Instance']}: {solution}")
+
+#     for i in range(len(solution) - 1):
+#         d = distance_matrix[solution[i], solution[i + 1]]
+#         total_distance += d
+#         print(f"Step {i+1}: {solution[i]} → {solution[i+1]}, Distance = {d:.4f}, Cumulative Distance = {total_distance:.4f}")
+
+#     print(f"Total Distance for instance {row['Instance']}: {total_distance:.4f}\n")
+
+# df = pd.DataFrame(distance_matrix)
+# df.to_excel("distance_matrix.xlsx", index=False, header=False)
+
+
+
+
 
