@@ -249,7 +249,7 @@ def sequence_to_order(sequence, h):
         order += sequence[i + 1] * (h ** i)  # Use i + 1 to skip the start point (0)
     return order
 
-def RL_inference(input_order, node_scores, n_days, confidence_level: float = 0.95):
+def RL_inference(input_order, node_scores, n_days, n_hotels, confidence_level: float = 0.95):
 
     self = OPTester(env_params=env_params, model_params=model_params, tester_params=tester_params)
 
@@ -297,29 +297,30 @@ def RL_inference(input_order, node_scores, n_days, confidence_level: float = 0.9
     if best_order is None:
         best_order = torch.tensor([0], dtype=torch.int64)  # Avoid None issues
 
-    num_hotels = (node_scores[0] == 0 if stochastic_prize else node_scores == 0).nonzero().squeeze()[-1] + 1  # Number of hotels
-    hotel_visits = (best_order < num_hotels).nonzero().squeeze()
+    index_of_visited_hotel = (best_order < n_hotels).nonzero().squeeze()
 
-    if hotel_visits.ndim == 0 or hotel_visits.numel() == 0:
+    if index_of_visited_hotel.ndim == 0 or index_of_visited_hotel.numel() == 0:
         score_per_day = torch.zeros(n_days, dtype=torch.float32)
         score_per_day[n_days - 1] = -1
 
     else:
         if not stochastic_prize:
             score_per_day = torch.tensor([
-                node_scores[best_order[hotel_visits[i] + 1 : hotel_visits[i + 1]]].sum()
-                for i in range(len(hotel_visits) - 1)
+                node_scores[best_order[index_of_visited_hotel[i] + 1 : index_of_visited_hotel[i + 1]]].sum()
+                for i in range(len(index_of_visited_hotel) - 1)
             ], dtype=torch.float32)
         else:
             score_per_day = torch.stack([
-                node_scores[:, best_order[hotel_visits[i] + 1 : hotel_visits[i + 1]]].sum(dim=1) 
-                for i in range(len(hotel_visits) - 1)
+                node_scores[:, best_order[index_of_visited_hotel[i] + 1 : index_of_visited_hotel[i + 1]]].sum(dim=1) 
+                for i in range(len(index_of_visited_hotel) - 1)
             ])
             mean_per_day = score_per_day[:, 0]
             std_dev_per_day = torch.sqrt(score_per_day[:, 1])
             alpha = 1 - confidence_level
-            score_per_day = norm.ppf(alpha, loc=mean_per_day, scale=std_dev_per_day)  
-            score_per_day = torch.tensor(score_per_day, dtype=torch.float32)
+            raw_score_per_day_np = norm.ppf(alpha, loc=mean_per_day, scale=std_dev_per_day)  
+            raw_score_per_day = torch.tensor(raw_score_per_day_np, dtype=torch.float32)
+            raw_score_per_day = torch.nan_to_num(raw_score_per_day, nan=0.0)
+            score_per_day = torch.clamp((raw_score_per_day), min = 0)
 
     return best_order, best_score, score_per_day
 
@@ -479,7 +480,7 @@ def optimize_trip(hps, hotel_size, n_days, scores, max_no_improve=20):
 
     hotel_order = greedy_trip_with_exploration(hps, n_days)  
     best_order = sequence_to_order(hotel_order, hotel_size)  
-    best_complete_solution, best_score, prize_per_day = RL_inference(best_order, scores, n_days)
+    best_complete_solution, best_score, prize_per_day = RL_inference(best_order, scores, n_days, hotel_size)
 
     no_improve_count = 0
     updated_mask = torch.zeros_like(hps, dtype=torch.bool)  
@@ -493,7 +494,7 @@ def optimize_trip(hps, hotel_size, n_days, scores, max_no_improve=20):
 
         hotel_order = greedy_trip_with_exploration(hps.clone(), n_days)  
         new_order_number = sequence_to_order(hotel_order, hotel_size)  
-        complete_solution, new_score, prize_per_day  = RL_inference(new_order_number, scores, n_days)
+        complete_solution, new_score, prize_per_day  = RL_inference(new_order_number, scores, n_days, hotel_size)
         # print(hotel_order, new_score)
 
         scores_history.append(new_score)
@@ -515,6 +516,7 @@ def optimize_trip(hps, hotel_size, n_days, scores, max_no_improve=20):
 #inputs
 base_pt_path = "../../../Instances/OPHSSP_pt/*.pt"
 base_ophs_path = "../../../Instances/raw_OPHSSP_instances/*.ophs"
+
 output_dir = "output_results"
 os.makedirs(output_dir, exist_ok=True)
 # output_file = os.path.join(output_dir, "OPHSSP_HRL_trained_on_100_Aug8x_3_repeat.xlsx")
@@ -561,7 +563,6 @@ for model_config in model_configs:
         tester_params['test_data_load']['filename'] = pt_path
 
         ophs_path = os.path.normpath(pt_path.replace("OPHSSP_pt", "raw_OPHSSP_instances").replace(".pt", ".ophs"))      # replace names here too
-        # ophs_path = os.path.normpath(pt_path.replace("OPHS_pt", "raw_OPHS_instances").replace(".pt", ".ophs"))      # replace names here too
         if ophs_path not in ophs_instances:
             print(f"Warning: No corresponding .ophs file found for {instance_name}")
             continue

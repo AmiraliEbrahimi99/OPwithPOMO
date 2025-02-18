@@ -75,8 +75,8 @@ def process_ophs_file(filepath, output_dir):
     }
 
     # Save the dictionary to a file
-    output_filename = os.path.join(output_dir, os.path.basename(filepath).replace('.ophs', '.pt'))
-    torch.save(saved_dict, output_filename)
+    # output_filename = os.path.join(output_dir, os.path.basename(filepath).replace('.ophs', '.pt'))
+    # torch.save(saved_dict, output_filename)
 
 
 def process_ophssp_file(filepath, output_dir):
@@ -231,16 +231,16 @@ def ophssp_create_new_file(filepath, output_dir):
 
 ###########################################################################################################################
 
-root_dir = "Instances/raw_OPHSSP_instances_high_variance"
-output_dir = "Instances/OPHSSP_high_variance_pt"
-# output_dir = "Instances/OPHSSP"
+root_dir = "Instances/SET4 3-2/100-20-3-2.ophs"
+output_dir = "Instances"
+
 os.makedirs(output_dir, exist_ok=True)
 
-for filepath in glob.glob(os.path.join(root_dir, "**/*.ophs"), recursive=True):
-    process_ophssp_file(filepath, output_dir)
+# for filepath in glob.glob(os.path.join(root_dir, "**/*.ophs"), recursive=True):
+#     process_ophssp_file(filepath, output_dir)
 
 ################ test #############################
 
 # ophssp_create_new_file(root_dir, output_dir)
 # process_ophssp_file(root_dir, output_dir)
-# process_ophssp_file(root_dir, output_dir)
+process_ophs_file(root_dir, output_dir)
