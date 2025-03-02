@@ -157,6 +157,7 @@ class EncoderLayer(nn.Module):
         # qkv shape: (batch, head_num, problem+hotel+day, qkv_dim)
 
         out_concat = flash_multi_head_attention(q, k, v)
+        # out_concat = multi_head_attention(q, k, v)
         # shape: (batch, problem+hotel+day, head_num*qkv_dim)
 
         multi_head_out = self.multi_head_combine(out_concat)

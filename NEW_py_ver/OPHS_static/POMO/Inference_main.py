@@ -28,7 +28,7 @@ CUDA_DEVICE_NUM = 0
 
 ##########################################################################################
 # parameters
-stochastic_prize = True
+stochastic_prize = False
 
 model_params = {
     'stochastic_prize': stochastic_prize,
@@ -514,8 +514,8 @@ def optimize_trip(hps, hotel_size, n_days, scores, max_no_improve=20):
 #####################################################   Main loop   ###################################################################################
 
 #inputs
-base_pt_path = "../../../Instances/OPHSSP_pt/*.pt"
-base_ophs_path = "../../../Instances/raw_OPHSSP_instances/*.ophs"
+base_pt_path = "../../../Instances/OPHS_pt/*.pt"
+base_ophs_path = "../../../Instances/raw_OPHS_instances/*.ophs"
 
 output_dir = "output_results"
 os.makedirs(output_dir, exist_ok=True)
@@ -525,10 +525,10 @@ augmentation_factor = 16
 repeats = 3
 
 model_configs = [
-    {"path": "./result/ophssp_so_100", "epoch": 220, "name": "OPHSSP_HRL_trained_on_100"},
-    {"path": "./result/ophssp_so_64", "epoch": 220, "name": "OPHSSP_HRL_trained_on_64"},
-    {"path": "./result/ophssp_so_32", "epoch": 160, "name": "OPHSSP_HRL_trained_on_32"},
-    {"path": "./result/ophssp_so_100_XL", "epoch": 200, "name": "OPHSSP_HRL_trained_on_100_XL"},
+    {"path": "./result/ophs_so_100", "epoch": 210, "name": "OPHS_HRL_trained_on_100"},
+    {"path": "./result/ophs_so_64", "epoch": 200, "name": "OPHS_HRL_trained_on_64"},
+    # {"path": "./result/ophs_so_32", "epoch": 200, "name": "OPHS_HRL_trained_on_32"},
+    # {"path": "./result/ophssp_so_100_XL", "epoch": 200, "name": "OPHSSP_HRL_trained_on_100_XL"},
 ]
 
 pt_instances = natsorted(glob.glob(base_pt_path))
@@ -562,7 +562,7 @@ for model_config in model_configs:
         tester_params['aug_factor'] = augmentation_factor
         tester_params['test_data_load']['filename'] = pt_path
 
-        ophs_path = os.path.normpath(pt_path.replace("OPHSSP_pt", "raw_OPHSSP_instances").replace(".pt", ".ophs"))      # replace names here too
+        ophs_path = os.path.normpath(pt_path.replace("OPHS_pt", "raw_OPHS_instances").replace(".pt", ".ophs"))      # replace names here too
         if ophs_path not in ophs_instances:
             print(f"Warning: No corresponding .ophs file found for {instance_name}")
             continue
