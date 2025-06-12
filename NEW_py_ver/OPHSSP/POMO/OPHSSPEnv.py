@@ -40,6 +40,7 @@ class OPHSSPEnv:
         self.problem_size = env_params['problem_size']
         self.pomo_size = env_params['pomo_size'] 
         self.hotel_size = env_params['hotel_size']                   
+        self.stochastic_prize = env_params['stochastic_prize']
 
         
         self.FLAG__use_saved_problems = False
@@ -95,8 +96,12 @@ class OPHSSPEnv:
         self.saved_day_number = loaded_dict['day_number']
         self.saved_depot_xy = loaded_dict['hotel_xy']
         self.saved_node_xy = loaded_dict['node_xy']
-        self.saved_node_prize = loaded_dict['node_prize']
         self.saved_remain_len = loaded_dict['remain_len']
+        if self.stochastic_prize:
+            self.saved_node_prize = torch.stack((loaded_dict['mean'], loaded_dict['deviation']), dim=-1)    
+        else:
+            self.saved_node_prize = loaded_dict['node_prize']
+        
         self.saved_index = 0   
 
         if hotel_swap:
@@ -135,7 +140,7 @@ class OPHSSPEnv:
             day_number = self.saved_day_number
             self.saved_index += batch_size
        
-        # self.trip_length = trip_length
+        self.trip_length = trip_length
         self.depot_xy = depot_xy
         self.node_xy = node_xy
         self.day_number = day_number
@@ -145,25 +150,32 @@ class OPHSSPEnv:
                 self.batch_size = self.batch_size * 8
                 self.depot_xy = augment_xy_data_by_8_fold(depot_xy)
                 self.node_xy = augment_xy_data_by_8_fold(node_xy)
-                node_prize = node_prize.repeat(8, 1)
+                self.trip_length = self.trip_length.repeat(8, 1)           
+                if self.stochastic_prize:
+                    node_prize = node_prize.repeat(8, 1, 1)
+                else:
+                    node_prize = node_prize.repeat(8, 1)
             elif aug_factor == 16:
                 self.batch_size = self.batch_size * 16
                 self.depot_xy = augment_xy_data_by_16_fold(depot_xy)
                 self.node_xy = augment_xy_data_by_16_fold(node_xy)
-                node_prize = node_prize.repeat(16, 1, 1)
                 self.trip_length = self.trip_length.repeat(16, 1)
+                if self.stochastic_prize:
+                    node_prize = node_prize.repeat(16, 1, 1)
+                else:
+                    node_prize = node_prize.repeat(16, 1)
             else:
                 raise NotImplementedError
                 
         self.depot_node_xy = torch.cat((self.depot_xy, self.node_xy), dim=1)
         # shape: (batch, problem+hotel, 2)
-        depot_prize = torch.zeros(size=(self.batch_size, self.hotel_size, 2))                            
-        # shape: (batch, hotel, 2)
+        if self.stochastic_prize:
+            depot_prize = torch.zeros(size=(self.batch_size, self.hotel_size, 2))                            
+        else:
+            depot_prize = torch.zeros(size=(self.batch_size, self.hotel_size))                            
+        # shape: (batch, hotel, 2) or # shape: (batch, hotel)
         self.depot_node_prize = torch.cat((depot_prize, node_prize), dim=1)
         # shape: (batch, problem+hotel, 2)
-
-        self.trip_length = trip_length.squeeze(2)
-        # shape: (batch, day)
         
         self.BATCH_IDX = torch.arange(self.batch_size)[:, None].expand(self.batch_size, self.pomo_size)
         self.POMO_IDX = torch.arange(self.pomo_size)[None, :].expand(self.batch_size, self.pomo_size)
@@ -199,7 +211,7 @@ class OPHSSPEnv:
         # shape: (batch, pomo)
         self.collected_prize = torch.zeros(size=(self.batch_size, self.pomo_size))
         # shape: (batch, pomo)
-
+        
         self.day_finished = torch.zeros(size=(self.batch_size, self.pomo_size), dtype=torch.int64)              # 5 new tensors        
         # shape: (batch, pomo)
         self.last_step_mask = torch.zeros(size=(self.batch_size, self.pomo_size), dtype=torch.bool)
@@ -259,40 +271,43 @@ class OPHSSPEnv:
         if self.selected_count == 1 :                     #first step(pomo) mask
             self.len_to_starting_depot, self.len_to_finishing_depot = self.calculate_len_to_depot()
             # shape len_to_start: (batch, pomo)
-            # shape len_to_finish: (batch, pomo, problem)
+            # shape len_to_finish: (batch, hotel, pomo)
+            
             self.first_step_len_too_large = (self.remaining_len < self.len_to_starting_depot + self.len_to_finishing_depot[:,0,:])          #infeasible first step condition
             self.ninf_mask_first_step[self.first_step_len_too_large] = True
             # shape: (batch, pomo)
+
             self.visited_ninf_flag[self.ninf_mask_first_step.unsqueeze(2).expand_as(self.visited_ninf_flag)] = float('-inf')
             self.finished[self.ninf_mask_first_step] = True
+
         # Dynamic-2
         ####################################
+
         self.at_the_depot = (selected == (self.finishing_depot_index))                   #change
 
-        self.prize_list = self.depot_node_prize[:, None, :, :].expand(self.batch_size, self.pomo_size, -1, -1)
-        # shape: (batch, pomo, problem+hotel , 2)
-        self.gathering_index = selected[:, :, None, None].expand(-1, -1, 1, 2)
-        # shape: (batch, pomo, 1, 1)
-        self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
-        # shape: (batch, pomo, 2)
-        raw_rewards = torch.randn(self.batch_size, self.problem_size) * self.selected_prize[:,:,1] + self.selected_prize[:,:,0]
+        if self.stochastic_prize:
+            self.prize_list = self.depot_node_prize[:, None, :, :].expand(self.batch_size, self.pomo_size, -1, -1)
+            # shape: (batch, pomo, problem+hotel , 2)
+            self.gathering_index = selected[:, :, None, None].expand(-1, -1, 1, 2)
+            # shape: (batch, pomo, 1, 1)
+            self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
+            # shape: (batch, pomo, 2)
+            raw_rewards = torch.randn(self.batch_size, self.problem_size) * self.selected_prize[:,:,1] + self.selected_prize[:,:,0]
 
-        non_zero_mask = raw_rewards != 0                                    # Clamp only the non-zero values
-        node_prizes = raw_rewards.clone()
-        node_prizes[non_zero_mask] = torch.clamp(torch.round(raw_rewards[non_zero_mask]), min=0.02, max=0.99)
-        # self.reward_tensor = node_prizes / 100                                      # Normalize by dividing by 100
-        self.reward_tensor = node_prizes                                      # Normalize by dividing by 100
+            non_zero_mask = raw_rewards != 0                                    # Clamp only the non-zero values
+            node_prizes = raw_rewards.clone()
+            node_prizes[non_zero_mask] = torch.clamp(torch.round(raw_rewards[non_zero_mask]), min=0.02, max=0.99)
+            self.reward_tensor = node_prizes
+            self.collected_prize += self.reward_tensor
+        else:
+            self.prize_list = self.depot_node_prize[:, None, :].expand(self.batch_size, self.pomo_size, -1)
+            # shape: (batch, pomo, problem+hotel)
+            self.gathering_index = selected[:, :, None]
+            # shape: (batch, pomo, 1)
+            self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
+            # shape: (batch, pomo)
+            self.collected_prize += self.selected_prize
 
-        self.collected_prize += self.reward_tensor
-
-        # self.prize_list = self.depot_node_prize[:, None, :].expand(self.batch_size, self.pomo_size, -1)
-        # # shape: (batch, pomo, problem+hotel)
-        # self.gathering_index = selected[:, :, None]
-        # # shape: (batch, pomo, 1)
-        # self.selected_prize = self.prize_list.gather(dim=2, index=self.gathering_index).squeeze(dim=2)
-        # # shape: (batch, pomo)
-
-        # self.collected_prize += self.selected_prize
 
         selected_len = self.calculate_two_distance()
 
@@ -391,13 +406,10 @@ class OPHSSPEnv:
             reward_mask = self.remaining_len < 0                                # negative reward
             self.collected_prize[reward_mask] = (self.remaining_len[reward_mask]*1000.00) / self.collected_prize[reward_mask]
 
-            # zero_score = (self.collected_prize == 0).all()
-            # if zero_score:  # If true, set all elements to 1e-7
-            #     self.collected_prize.fill_(1e-7)
-
             reward = self.collected_prize
-            # print(self.selected_node_list.tolist())
-            # print(self.selected_node_list)
+            # print(f'########selected nodes######## \n{self.selected_node_list}\n\n########trip length#######\n{self.trip_length}\n\n######final reward#####\n{reward}')    #for testing
+            # print(self.trip_length)
+            # print(f'\n{self.trip_length}\n{self.selected_node_list[0,2]}\n{self.prize_list[0,0]}\nprizes:   {reward[0,2]}\n')
         else:
             reward = None
 

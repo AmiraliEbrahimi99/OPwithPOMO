@@ -71,12 +71,14 @@ def process_ophs_file(filepath, output_dir):
         'remain_len': remaining_len,
         'hotel_xy': hotel_xy,
         'node_xy': node_xy,
-        'node_prize': node_prize 
+        'node_prize': node_prize, 
+        'day_number': day_number
     }
 
+    # print(saved_dict)
     # Save the dictionary to a file
-    # output_filename = os.path.join(output_dir, os.path.basename(filepath).replace('.ophs', '.pt'))
-    # torch.save(saved_dict, output_filename)
+    output_filename = os.path.join(output_dir, os.path.basename(filepath).replace('.ophs', '.pt'))
+    torch.save(saved_dict, output_filename)
 
 
 def process_ophssp_file(filepath, output_dir):
@@ -95,6 +97,8 @@ def process_ophssp_file(filepath, output_dir):
     # Initialize tensors for node xy and prizes
     hotel_xy_list = []
     node_xy_list = []
+    x_coords = []
+    y_coords = []
     mean = []
     variance = []
 
@@ -107,6 +111,8 @@ def process_ophssp_file(filepath, output_dir):
     for line in lines[(3 + hotel_size) : (3 + hotel_size + problem_size)]:
         nums = list(map(float, line.split()))
         node_xy_list.append([nums[0], nums[1]])
+        x_coords.append(nums[0])
+        y_coords.append(nums[1])
         mean.append(nums[2])
         variance.append(nums[3])
 
@@ -145,18 +151,29 @@ def process_ophssp_file(filepath, output_dir):
     # print("mean rescaled tensor:", mean_rescaled)
     # print("deviation rescaled tensor:",deviation_rescaled)
 
+    # print(x_coords)
+    # print(y_coords)
+    # print("mean rescaled tensor:", mean_tensor)
+    # print("deviation rescaled tensor:",vaiance_tensor)
+    # print(remaining_length_tensor)
+    # print("deviation rescaled tensor:",torch.floor(torch.sqrt(vaiance_tensor.sum())))
+
     remaining_len = remaining_length_rescaled.unsqueeze(0)
     hotel_xy = hotel_xy_rescaled.unsqueeze(0)
     node_xy = node_xy_rescaled.unsqueeze(0)
     mean = mean_rescaled.unsqueeze(0)
     deviation = deviation_rescaled.unsqueeze(0)
+    day_number_tensor = torch.full((1, 1), day_number)
+
 
     saved_dict = {
         'remain_len': remaining_len,
         'hotel_xy': hotel_xy,
         'node_xy': node_xy,
         'mean': mean, 
-        'deviation': deviation 
+        'deviation': deviation,
+        'day_number': day_number_tensor
+
     }
 
     # Save the dictionary to a file
@@ -229,18 +246,18 @@ def ophssp_create_new_file(filepath, output_dir):
     with open(output_filepath, "w") as f:
         f.writelines(modified_lines)
 
-###########################################################################################################################
+###########################################################################################################################  
 
-root_dir = "Instances/SET4 3-2/100-20-3-2.ophs"
-output_dir = "Instances"
+root_dir = "Instances/raw_OPHSSP_instances"
+output_dir = "Instances/new_Stoc_instances_for_model3"
 
 os.makedirs(output_dir, exist_ok=True)
 
-# for filepath in glob.glob(os.path.join(root_dir, "**/*.ophs"), recursive=True):
-#     process_ophssp_file(filepath, output_dir)
+for filepath in glob.glob(os.path.join(root_dir, "**/*.ophs"), recursive=True):
+    process_ophssp_file(filepath, output_dir)
 
 ################ test #############################
 
 # ophssp_create_new_file(root_dir, output_dir)
 # process_ophssp_file(root_dir, output_dir)
-process_ophs_file(root_dir, output_dir)
+# process_ophs_file(root_dir, output_dir)

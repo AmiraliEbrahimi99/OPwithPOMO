@@ -14,6 +14,7 @@ class OPHSSPModel(nn.Module):
         self.decoder = OPHSSP_Decoder(**model_params)
         self.encoded_nodes = None
         # shape: (batch, problem+hotel, EMBEDDING_DIM)
+        self.stochastic_prize = model_params['stochastic_prize']
 
     def pre_forward(self, reset_state):
             depot_xy = reset_state.depot_xy
@@ -28,8 +29,11 @@ class OPHSSPModel(nn.Module):
             # shape: (batch, problem, 2)
             node_prize = reset_state.node_prize
             # shape: (batch, problem)
-            node_xy_prize = torch.cat((node_xy, node_prize), dim=2)  
-            # shape: (batch, problem, 4)
+            if self.stochastic_prize:
+                node_xy_prize = torch.cat((node_xy, node_prize), dim=2)
+            else:
+                node_xy_prize = torch.cat((node_xy, node_prize[:, :, None]), dim=2)
+            # shape: (batch, problem, 3)
 
             self.encoded_nodes = self.encoder(depot_xy_day, node_xy_prize)
             # shape: (batch, problem+2, embedding)
@@ -102,9 +106,14 @@ class OPHSSP_Encoder(nn.Module):
         self.model_params = model_params
         embedding_dim = self.model_params['embedding_dim']
         encoder_layer_num = self.model_params['encoder_layer_num']
+        self.stochastic_prize = self.model_params['stochastic_prize']
 
         self.embedding_depot = nn.Linear(3, embedding_dim)
-        self.embedding_node = nn.Linear(4, embedding_dim)  
+        if self.stochastic_prize:
+            self.embedding_node = nn.Linear(4, embedding_dim)
+        else:
+            self.embedding_node = nn.Linear(3, embedding_dim)
+
         self.layers = nn.ModuleList([EncoderLayer(**model_params) for _ in range(encoder_layer_num)])
 
     def forward(self, depot_xy_day, node_xy_prize):
