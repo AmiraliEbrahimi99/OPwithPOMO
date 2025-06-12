@@ -21,13 +21,22 @@ We provide code for three CO (Combinatorial Optimization) problems, with some va
 - Added a new test file for OPHS variants to evaluate trained models in combination with a heuristic method
 - Added `instance_read.py` for transforming `.txt` input files into `.pt` format with improved readability
 
+### Instances
+
+All OPHS instances are based on datasets from [KU Leuven's benchmark set](https://www.mech.kuleuven.be/en/cib/op).  
+Stochastic prize instances were derived from these originals, and all instance files are available in the `Instances` folder.
+
+
 ### Basic Usage
 
 To train a model for any of the problems, run `train.py`.  
 You can modify parameters such as problem size, training settings, and prize type directly in `train.py`.
 
 To test a model, run `test.py`.  
-You can specify the model inside `test.py`. It can be set to use either the saved model provided in the `result` folder or any custom-trained model.
+You can specify the model inside `test.py`. It can be set to use either the saved model provided in the `result` folder or any custom-trained model. 
+Due to the large size of trained models, they are hosted externally and can be downloaded from the following link:  
+[Google Drive - Trained Models](https://drive.google.com/drive/folders/111z51P-K9P4jxt0XfwEGFjrwMan8kY_7?usp=sharing)  
+After downloading, place the models in the `result` folder to use them for testing.
 
 To test a model for OPHS variants, run `Inference_main.py`.  
 You can set parameters for the heuristic algorithm, such as the number of repetitions, augmentation count, and more, within that file.
