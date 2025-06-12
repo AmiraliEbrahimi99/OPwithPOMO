@@ -35,7 +35,7 @@ from OPHSTrainer import OPHSTrainer as Trainer
 
 ##########################################################################################
 # parameters
-stochastic_prize = True
+stochastic_prize = True             # set the prize type
 env_params = {
     'problem_size': 32,
     'pomo_size': 32,

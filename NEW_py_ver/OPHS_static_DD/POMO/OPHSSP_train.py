@@ -35,14 +35,16 @@ from OPHSSPTrainer import OPHSSPTrainer as Trainer
 
 ##########################################################################################
 # parameters
-
+stochastic_prize = True             # set the prize type
 env_params = {
     'problem_size': 32,
     'pomo_size': 32,
     'hotel_size': 7,
+    'stochastic_prize': stochastic_prize,
 }
 
 model_params = {
+    'stochastic_prize': stochastic_prize,
     'embedding_dim': 128,
     'sqrt_embedding_dim': 128**(1/2),
     'encoder_layer_num': 6,
